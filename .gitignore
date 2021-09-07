@@ -1,0 +1,14 @@
+*.pyc
+/build
+/dist
+/wagtail_localize_rws_languagecloud.egg-info
+/.coverage
+/htmlcov
+/.tox
+/venv
+/.vscode
+/site
+/test_wagtail_localize_rws_languagecloud.db
+/node_modules
+/test-static
+/test-media

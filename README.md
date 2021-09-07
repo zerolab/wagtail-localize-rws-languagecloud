@@ -1,0 +1,1 @@
+# Wagtail Localize RWS LanguageCloud
