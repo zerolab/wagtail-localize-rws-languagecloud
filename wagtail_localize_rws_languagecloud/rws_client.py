@@ -4,7 +4,8 @@ import requests
 
 
 class ApiClient:
-    def __init__(self):
+    def __init__(self, logger=None):
+        self.logger = logger or logging.getLogger(__name__)
         self.auth_base = settings.WAGTAILLOCALIZE_RWS_LANGUAGECLOUD.get(
             "AUTH_BASE",
             "https://sdl-prod.eu.auth0.com/oauth/token",
@@ -24,6 +25,7 @@ class ApiClient:
         }
 
     def _authenticate(self):
+        self.logger.debug("_authenticate")
         r = requests.post(
             self.auth_base,
             {
@@ -35,10 +37,12 @@ class ApiClient:
                 ],
             },
         )
+        self.logger.debug(r.text)
         r.raise_for_status()
         return r.json()["access_token"]
 
     def create_project(self, name, due_by, description):
+        self.logger.debug("create_project")
         body = json.dumps(
             {
                 "name": name,
@@ -54,10 +58,12 @@ class ApiClient:
             body,
             headers=self.headers,
         )
+        self.logger.debug(r.text)
         r.raise_for_status()
         return r.json()
 
     def create_source_file(self, project_id, po_file, filename, source_locale, target_locale):
+        self.logger.debug("create_source_file")
         body = {
             "properties": json.dumps(
                 {
@@ -76,5 +82,6 @@ class ApiClient:
             files=files,
             headers=self.headers,
         )
+        self.logger.debug(r.text)
         r.raise_for_status()
         return r.json()

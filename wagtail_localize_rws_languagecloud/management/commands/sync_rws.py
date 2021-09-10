@@ -7,13 +7,17 @@ from ...sync import SyncManager
 
 class Command(BaseCommand):
     def handle(self, **options):
+        log_level = logging.INFO
+        if options['verbosity'] > 1:
+            log_level = logging.DEBUG
+
         logger = logging.getLogger(__name__)
 
         # Enable logging to console
         console = logging.StreamHandler()
-        console.setLevel(logging.INFO)
+        console.setLevel(log_level)
         console.setFormatter(logging.Formatter("%(levelname)s - %(message)s"))
         logger.addHandler(console)
-        logger.setLevel(logging.INFO)
+        logger.setLevel(log_level)
 
         SyncManager(logger=logger).sync()
