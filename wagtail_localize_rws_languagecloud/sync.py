@@ -113,14 +113,15 @@ class SyncManager:
         self.logger.info("Syncing with RWS LanguageCloud...")
 
         """
-        Constructing an ApiClient object will request an OAUth token
+        Calling authenticate() will request an OAUth token
         which can be used for the duration of the session
         (a token expires after 24 hours).
         
         We can't do anything without auth, so there is no try/except here.
         If we throw an exception invoking ApiClient() the error is fatal.
         """
-        client = ApiClient()
+        client = ApiClient(self.logger)
+        client.authenticate()
 
         _export(client, self.logger)
         _import(client, self.logger)

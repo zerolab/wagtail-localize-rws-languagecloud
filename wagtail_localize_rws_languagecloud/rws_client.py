@@ -3,6 +3,9 @@ from django.conf import settings
 import requests
 
 
+class NotAuthenticated(Exception):
+    pass
+
 class ApiClient:
     def __init__(self, logger=None):
         self.logger = logger or logging.getLogger(__name__)
@@ -18,14 +21,10 @@ class ApiClient:
             "API_BASE",
             "https://lc-api.sdl.com/public-api/v1",
         )
-        self.token = self._authenticate()
-        self.headers = {
-            "Authorization": f"Bearer {self.token}",
-            "X-LC-Tenant": settings.WAGTAILLOCALIZE_RWS_LANGUAGECLOUD["ACCOUNT_ID"],
-        }
+        self.is_authenticated = False
 
-    def _authenticate(self):
-        self.logger.debug("_authenticate")
+    def authenticate(self):
+        self.logger.debug("authenticate")
         r = requests.post(
             self.auth_base,
             {
@@ -39,10 +38,19 @@ class ApiClient:
         )
         self.logger.debug(r.text)
         r.raise_for_status()
-        return r.json()["access_token"]
+
+        self.is_authenticated = True
+        self.token = r.json()["access_token"]
+        self.headers = {
+            "Authorization": f"Bearer {self.token}",
+            "X-LC-Tenant": settings.WAGTAILLOCALIZE_RWS_LANGUAGECLOUD["ACCOUNT_ID"],
+        }
 
     def create_project(self, name, due_by, description):
         self.logger.debug("create_project")
+        if not self.is_authenticated:
+            raise NotAuthenticated()
+
         body = json.dumps(
             {
                 "name": name,
@@ -64,6 +72,9 @@ class ApiClient:
 
     def create_source_file(self, project_id, po_file, filename, source_locale, target_locale):
         self.logger.debug("create_source_file")
+        if not self.is_authenticated:
+            raise NotAuthenticated()
+
         body = {
             "properties": json.dumps(
                 {
