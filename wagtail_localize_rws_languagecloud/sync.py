@@ -153,3 +153,23 @@ class SyncManager:
         _import(client, self.logger)
 
         self.logger.info("...Done")
+
+    def trigger(self):
+        """
+        Called when user presses the "Sync" button in the admin
+
+        This should enqueue a background task to run the sync() function
+        """
+        self.sync()
+
+    def is_queued(self):
+        """
+        Returns True if the background task is queued
+        """
+        return False
+
+    def is_running(self):
+        """
+        Returns True if the background task is currently running
+        """
+        return False
