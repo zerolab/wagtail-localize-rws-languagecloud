@@ -1,7 +1,8 @@
 import datetime
 import logging
 from django.conf import settings
-from wagtail.core.models import Locale
+from wagtail.admin.models import get_object_usage
+from wagtail.core.models import Locale, Page
 from wagtail_localize.models import Translation
 from requests.exceptions import RequestException
 from .rws_client import ApiClient
@@ -38,8 +39,33 @@ def _get_project_due_date():
     return due_date.strftime("%Y-%m-%dT%H:%M:%S.000Z")
 
 
-def _get_project_description(translation):
-    return "test project"
+def _get_absolute_url(url):
+    # We don't have a request in scope, so do the best we can
+    base_url = getattr(settings, 'BASE_URL', None)
+    if base_url:
+        return base_url.rstrip('/') + url
+    return url
+
+
+def _get_project_description(translation, source_locale):
+    description = ''
+
+    # TODO: Add user who initiated the translation
+    # Once we add a form to the page
+    # we can capture the logged in user with the form fields
+
+    instance = translation.source.object.get_instance(source_locale)
+    if isinstance(instance, Page):
+        description = description + _get_absolute_url(instance.url)
+        return description
+
+    pages = get_object_usage(instance)
+    # This is only contextual information. If a snippet appears in hundreds of
+    # pages we probably don't need to spam all of them. Just take the first 5.
+    urls = [_get_absolute_url(page.url) for page in pages.all()[:5]]
+    description = description + "\n".join(urls)
+
+    return description
 
 
 def _export(client, logger):
@@ -64,7 +90,7 @@ def _export(client, logger):
 
         name = _get_project_name(translation, source_locale)
         due_by = _get_project_due_date()
-        description = _get_project_description(translation)
+        description = _get_project_description(translation, source_locale)
 
         if not project_id:
             try:
