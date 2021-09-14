@@ -3,6 +3,10 @@ from wagtail_localize.models import Translation
 
 
 class LanguageCloudProject(models.Model):
+    STATUS_NEW = "new"
+    STATUS_IMPORTED = "imported"
+    STATUS_CHOICES = [(STATUS_NEW , STATUS_NEW), (STATUS_IMPORTED, STATUS_IMPORTED)]
+
     translation = models.ForeignKey(Translation, on_delete=models.CASCADE)
     source_last_updated_at = models.DateTimeField()
     lc_project_id = models.CharField(blank=True, max_length=255)
@@ -15,7 +19,12 @@ class LanguageCloudProject(models.Model):
     or empty string
     """
     lc_project_status = models.CharField(blank=True, max_length=255)
-    internal_status = models.CharField(blank=False, max_length=255, default="new")
+    internal_status = models.CharField(
+        blank=False,
+        max_length=255,
+        choices=STATUS_CHOICES,
+        default=STATUS_NEW,
+    )
 
     class Meta:
         unique_together = [
