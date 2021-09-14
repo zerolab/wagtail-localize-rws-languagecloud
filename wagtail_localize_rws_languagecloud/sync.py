@@ -39,14 +39,6 @@ def _get_project_due_date():
     return due_date.strftime("%Y-%m-%dT%H:%M:%S.000Z")
 
 
-def _get_absolute_url(url):
-    # We don't have a request in scope, so do the best we can
-    base_url = getattr(settings, 'BASE_URL', None)
-    if base_url:
-        return base_url.rstrip('/') + url
-    return url
-
-
 def _get_project_description(translation, source_locale):
     description = ''
 
@@ -56,13 +48,13 @@ def _get_project_description(translation, source_locale):
 
     instance = translation.source.object.get_instance(source_locale)
     if isinstance(instance, Page):
-        description = description + _get_absolute_url(instance.url or '')
+        description = description + (instance.full_url or "")
         return description
 
     pages = get_object_usage(instance)
     # This is only contextual information. If a snippet appears in hundreds of
     # pages we probably don't need to spam all of them. Just take the first 5.
-    urls = [_get_absolute_url(page.url or '') for page in pages.all()[:5]]
+    urls = [(instance.full_url or "") for page in pages.all()[:5]]
     description = description + "\n".join(urls)
 
     return description
