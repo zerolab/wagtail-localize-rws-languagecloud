@@ -46,7 +46,7 @@ def _get_project_description(translation, source_locale):
 
 
 def _should_export(logger, lc_project):
-    if lc_project.internal_status == "imported":
+    if lc_project.internal_status == LanguageCloudProject.STATUS_IMPORTED:
         logger.info(
             f"Already imported translations for {lc_project.translation.uuid}. Skipping.."
         )

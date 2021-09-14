@@ -122,12 +122,12 @@ class TestExport(TestCase):
         LanguageCloudProject.objects.create(
             translation=self.translations[0],
             source_last_updated_at=self.translations[0].source.last_updated_at,
-            internal_status="imported",
+            internal_status=LanguageCloudProject.STATUS_IMPORTED,
         )
         LanguageCloudProject.objects.create(
             translation=self.translations[1],
             source_last_updated_at=self.translations[1].source.last_updated_at,
-            internal_status="imported",
+            internal_status=LanguageCloudProject.STATUS_IMPORTED,
         )
         client = ApiClient()
         client.is_authorized = True
@@ -275,7 +275,7 @@ class TestHelpers(TestCase):
                 LanguageCloudProject(
                     translation=self.translation,
                     source_last_updated_at=self.translation.source.last_updated_at,
-                    internal_status="imported",
+                    internal_status=LanguageCloudProject.STATUS_IMPORTED,
                 ),
             )
         )
