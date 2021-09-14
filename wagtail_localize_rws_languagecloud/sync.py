@@ -5,23 +5,8 @@ from wagtail.admin.models import get_object_usage
 from wagtail.core.models import Locale, Page
 from wagtail_localize.models import Translation
 from requests.exceptions import RequestException
+from .models import LanguageCloudProject
 from .rws_client import ApiClient
-
-
-def _get_existing_project(translation):
-    # TODO: query DB
-    # if we already have a LanguageCloud project for this translation object
-    # return the LanguageCloud Project ID
-    # else return None
-    return None
-
-
-def _get_existing_source_file(translation):
-    # TODO: query DB
-    # if we already have a LanguageCloud source file for this translation object
-    # return the LanguageCloud Source File ID
-    # else return None
-    return None
 
 
 def _get_project_name(translation, source_locale):
@@ -60,6 +45,63 @@ def _get_project_description(translation, source_locale):
     return description
 
 
+def _should_export(logger, lc_project):
+    if lc_project.internal_status == "imported":
+        logger.info(
+            f"Already imported translations for {lc_project.translation.uuid}. Skipping.."
+        )
+        return False
+
+    if lc_project.lc_project_id and lc_project.lc_source_file_id:
+        logger.info(
+            f"Already created project {lc_project.lc_project_id} and "
+            f"source file {lc_project.lc_source_file_id}. Skipping.."
+        )
+        return False
+
+    if lc_project.project_failed or lc_project.file_failed:
+        logger.info(
+            f"Too many failed attempts for {lc_project.translation.uuid}. Skipping.."
+        )
+        return False
+
+    return True
+
+
+def _create_project(lc_project, client, name, due_by, description):
+    try:
+        create_project_resp = client.create_project(name, due_by, description)
+        lc_project.lc_project_id = create_project_resp["id"]
+        lc_project.project_create_attempts = lc_project.project_create_attempts + 1
+        lc_project.save()
+        return create_project_resp["id"]
+    except (RequestException, KeyError):
+        lc_project.project_create_attempts = lc_project.project_create_attempts + 1
+        lc_project.save()
+        raise
+
+
+def _create_source_file(
+    lc_project, client, project_id, po_file, filename, source_locale, target_locale
+):
+    try:
+        create_file_resp = client.create_source_file(
+            project_id, po_file, filename, source_locale, target_locale
+        )
+        lc_project.lc_source_file_id = create_file_resp["id"]
+        lc_project.source_file_create_attempts = (
+            lc_project.source_file_create_attempts + 1
+        )
+        lc_project.save()
+        return create_file_resp["id"]
+    except (RequestException, KeyError):
+        lc_project.source_file_create_attempts = (
+            lc_project.source_file_create_attempts + 1
+        )
+        lc_project.save()
+        raise
+
+
 def _export(client, logger):
     source_locale = Locale.get_default()
     target_locales = Locale.objects.exclude(id=source_locale.id)
@@ -77,8 +119,15 @@ def _export(client, logger):
             f"       {str(translation.source.object.get_instance(source_locale))}\n"
             f"       {source_locale} --> {str(translation.target_locale)} "
         )
+        lc_project, _ = LanguageCloudProject.objects.get_or_create(
+            translation=translation,
+            source_last_updated_at=translation.source.last_updated_at,
+        )
 
-        project_id = _get_existing_project(translation)
+        if not _should_export(logger, lc_project):
+            continue
+
+        project_id = lc_project.lc_project_id
 
         name = _get_project_name(translation, source_locale)
         due_by = _get_project_due_date()
@@ -86,33 +135,29 @@ def _export(client, logger):
 
         if not project_id:
             try:
-                create_project_resp = client.create_project(name, due_by, description)
-                # TODO: save to DB
+                project_id = _create_project(lc_project, client, name, due_by, description)
             except (RequestException, KeyError):
                 logger.error("Failed to create project")
-                # TODO: log the attempt/failure in the DB
                 continue
-            project_id = create_project_resp["id"]
             logger.info(f"Created project: {project_id}")
         else:
             logger.info(f"Already created project: {project_id}. Skipping..")
 
-        source_file_id = _get_existing_source_file(translation)
+        source_file_id = lc_project.lc_source_file_id
         if not source_file_id:
             try:
-                create_file_resp = client.create_source_file(
+                source_file_id = _create_source_file(
+                    lc_project,
+                    client,
                     project_id,
                     str(translation.source.export_po()),
                     f"{name}.po",
                     source_locale.language_code,
                     translation.target_locale.language_code,
                 )
-                # TODO: save to DB
             except (RequestException, KeyError):
                 logger.error("Failed to create source file")
-                # TODO: log the attempt/failure in the DB
                 continue
-            source_file_id = create_file_resp["id"]
             logger.info(f"Created source file: {source_file_id}")
         else:
             logger.info(f"Already created source file: {source_file_id}. Skipping..")
