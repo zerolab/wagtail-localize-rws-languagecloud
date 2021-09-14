@@ -40,7 +40,7 @@ class TestExport(TestCase):
         self.logger = logging.getLogger(__name__)
         logging.disable()  # supress log output under test
 
-    def test_exports_all_api_calls_succeed(self):
+    def test_export_all_api_calls_succeed(self):
         client = ApiClient()
         client.is_authorized = True
         client.create_project = Mock(return_value={"id": "abc123"}, spec=True)
@@ -49,7 +49,7 @@ class TestExport(TestCase):
         self.assertEqual(client.create_project.call_count, 2)
         self.assertEqual(client.create_source_file.call_count, 2)
 
-    def test_all_create_project_api_calls_fail(self):
+    def test_export_all_create_project_api_calls_fail(self):
         client = ApiClient()
         client.is_authorized = True
         client.create_project = Mock(side_effect=RequestException("oh no"), spec=True)
@@ -60,7 +60,7 @@ class TestExport(TestCase):
         self.assertEqual(client.create_project.call_count, 2)
         self.assertEqual(client.create_source_file.call_count, 0)
 
-    def test_some_create_project_api_calls_fail(self):
+    def test_export_some_create_project_api_calls_fail(self):
         client = ApiClient()
         client.is_authorized = True
         client.create_project = Mock(
