@@ -34,6 +34,8 @@ ALLOWED_HOSTS = ["localhost", "testserver"]
 INSTALLED_APPS = [
     "wagtail_localize_rws_languagecloud",
     "wagtail_localize_rws_languagecloud.test",
+    "wagtail_localize",
+    "wagtail_localize.test",
     "wagtail.contrib.search_promotions",
     "wagtail.contrib.forms",
     "wagtail.contrib.redirects",
@@ -160,3 +162,5 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "test-media")
 # Wagtail settings
 
 WAGTAIL_SITE_NAME = "Wagtail Localize RWS LanguageCloud test site"
+
+WAGTAILLOCALIZE_RWS_LANGUAGECLOUD = {}
