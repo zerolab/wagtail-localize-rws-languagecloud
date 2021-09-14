@@ -31,7 +31,7 @@ def _get_project_name(translation, source_locale):
 
 
 def _get_project_due_date():
-    now = datetime.datetime.now()
+    now = datetime.datetime.utcnow()
     delta = settings.WAGTAILLOCALIZE_RWS_LANGUAGECLOUD.get(
         "DUE_BY_DELTA", datetime.timedelta(days=7)
     )
