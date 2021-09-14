@@ -56,13 +56,13 @@ def _get_project_description(translation, source_locale):
 
     instance = translation.source.object.get_instance(source_locale)
     if isinstance(instance, Page):
-        description = description + _get_absolute_url(instance.url)
+        description = description + _get_absolute_url(instance.url or '')
         return description
 
     pages = get_object_usage(instance)
     # This is only contextual information. If a snippet appears in hundreds of
     # pages we probably don't need to spam all of them. Just take the first 5.
-    urls = [_get_absolute_url(page.url) for page in pages.all()[:5]]
+    urls = [_get_absolute_url(page.url or '') for page in pages.all()[:5]]
     description = description + "\n".join(urls)
 
     return description

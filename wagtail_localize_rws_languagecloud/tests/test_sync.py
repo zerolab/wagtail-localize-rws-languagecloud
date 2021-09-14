@@ -12,7 +12,7 @@ import wagtail_localize_rws_languagecloud.sync as sync
 
 
 def create_test_page(**kwargs):
-    parent = kwargs.pop("parent", None) or Page.objects.get(id=1)
+    parent = kwargs.pop("parent", None) or Page.objects.get(slug="home")
     page = parent.add_child(instance=TestPage(**kwargs))
     revision = page.save_revision()
     revision.publish()
