@@ -14,10 +14,12 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python: ['3.7', '3.8']
-        django: ['2.2', '3.0', '3.1']
-        wagtail: ['2.11']
-
+        'python': ['3.7', '3.8', '3.9']
+        'django-wagtail':
+          - 'django2.2-wagtail2.11'
+          - 'django3.1-wagtail2.11'
+          - 'django3.1-wagtail2.14'
+          - 'django3.2-wagtail2.14'
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.python }}
@@ -31,16 +33,19 @@ jobs:
         run: |
           tox
         env:
-          TOXENV: python${{ matrix.python }}-django${{ matrix.django }}-wagtail${{ matrix.wagtail }}-sqlite
+          TOXENV: python${{ matrix.python }}-${{ matrix.django-wagtail }}-sqlite
 
   test-postgres:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python: ['3.7', '3.8']
-        django: ['2.2', '3.0', '3.1']
-        wagtail: ['2.11']
         postgres: ['10.8']
+        'python': ['3.7', '3.8', '3.9']
+        'django-wagtail':
+          - 'django2.2-wagtail2.11'
+          - 'django3.1-wagtail2.11'
+          - 'django3.1-wagtail2.14'
+          - 'django3.2-wagtail2.14'
 
     services:
       postgres:
@@ -63,4 +68,4 @@ jobs:
           tox
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/wagtail_localize_rws_languagecloud
-          TOXENV: python${{ matrix.python }}-django${{ matrix.django }}-wagtail${{ matrix.wagtail }}-postgres
+          TOXENV: python${{ matrix.python }}-${{ matrix.django-wagtail }}-postgres
