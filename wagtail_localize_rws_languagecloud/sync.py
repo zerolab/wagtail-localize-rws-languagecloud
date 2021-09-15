@@ -54,7 +54,7 @@ def _get_project_description(translation, source_locale):
     pages = get_object_usage(instance)
     # This is only contextual information. If a snippet appears in hundreds of
     # pages we probably don't need to spam all of them. Just take the first 5.
-    urls = [(instance.full_url or "") for page in pages.all()[:5]]
+    urls = [(page.full_url or "") for page in pages.all()[:5]]
     description = description + "\n".join(urls)
 
     return description
