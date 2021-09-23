@@ -3,7 +3,7 @@ from urllib.parse import parse_qs
 from django.test import TestCase, override_settings
 from requests.exceptions import RequestException
 import responses
-from ..rws_client import ApiClient, NotAuthenticated
+from ..rws_client import ApiClient, NotAuthenticated, NotFound
 
 
 class TestApiClient(TestCase):
@@ -207,3 +207,182 @@ class TestApiClient(TestCase):
                 "fakeproject", "fakepo", "fakefilename.po", "en-US", "fr-CA"
             )
         self.assertEqual(len(responses.calls), 1)
+
+    @responses.activate
+    def test_get_project_success(self):
+        responses.add(
+            responses.GET,
+            "https://lc-api.sdl.com/public-api/v1/projects/fakeproject",
+            json={"id": "123456", "status": "inProgress"},
+            status=200,
+        )
+        client = ApiClient()
+
+        # fake the auth step
+        client.is_authenticated = True
+        client.headers = {}
+
+        resp = client.get_project("fakeproject")
+        self.assertEqual(len(responses.calls), 1)
+        self.assertEqual(resp, {"id": "123456", "status": "inProgress"})
+
+    @responses.activate
+    def test_get_project_fail(self):
+        responses.add(
+            responses.GET,
+            "https://lc-api.sdl.com/public-api/v1/projects/fakeproject",
+            json={"errorCode": "BAD REQUEST", "message": "nope", "details": []},
+            status=400,
+        )
+        client = ApiClient()
+
+        # fake the auth step
+        client.is_authenticated = True
+        client.headers = {}
+
+        with self.assertRaises(RequestException):
+            client.get_project("fakeproject")
+        self.assertEqual(len(responses.calls), 1)
+
+    @responses.activate
+    def test_download_target_file_success(self):
+        responses.add(
+            responses.GET,
+            "https://lc-api.sdl.com/public-api/v1/projects/fakeproject/target-files",
+            json={
+                "items": [
+                    {
+                        "id": "12345",
+                        "latestVersion": {"id": "678910", "type": "native"},
+                        "sourceFile": {"id": "faketargetfile", "role": "translatable"},
+                    }
+                ],
+                "itemCount": 1,
+            },
+            status=200,
+        )
+        responses.add(
+            responses.GET,
+            "https://lc-api.sdl.com/public-api/v1/projects/fakeproject/target-files/12345/versions/678910/download",
+            body='msgid ""...',
+            status=200,
+        )
+        client = ApiClient()
+
+        # fake the auth step
+        client.is_authenticated = True
+        client.headers = {}
+
+        resp = client.download_target_file("fakeproject", "faketargetfile")
+        self.assertEqual(len(responses.calls), 2)
+        self.assertEqual(resp, 'msgid ""...')
+
+    @responses.activate
+    def test_download_target_file_fail_list_target_files(self):
+        responses.add(
+            responses.GET,
+            "https://lc-api.sdl.com/public-api/v1/projects/fakeproject/target-files",
+            json={"errorCode": "BAD REQUEST", "message": "nope", "details": []},
+            status=400,
+        )
+        client = ApiClient()
+
+        # fake the auth step
+        client.is_authenticated = True
+        client.headers = {}
+
+        with self.assertRaises(RequestException):
+            resp = client.download_target_file("fakeproject", "faketargetfile")
+        self.assertEqual(len(responses.calls), 1)
+
+    @responses.activate
+    def test_download_target_file_fail_no_matching_target_files(self):
+        responses.add(
+            responses.GET,
+            "https://lc-api.sdl.com/public-api/v1/projects/fakeproject/target-files",
+            json={
+                "items": [
+                    {
+                        "id": "12345",
+                        "latestVersion": {"id": "678910", "type": "bcm"},
+                        "sourceFile": {"id": "faketargetfile", "role": "translatable"},
+                    }
+                ],
+                "itemCount": 1,
+            },
+            status=200,
+        )
+        client = ApiClient()
+
+        # fake the auth step
+        client.is_authenticated = True
+        client.headers = {}
+
+        with self.assertRaises(NotFound):
+            resp = client.download_target_file("fakeproject", "faketargetfile")
+        self.assertEqual(len(responses.calls), 1)
+
+    @responses.activate
+    def test_download_target_file_fail_many_matching_target_files(self):
+        responses.add(
+            responses.GET,
+            "https://lc-api.sdl.com/public-api/v1/projects/fakeproject/target-files",
+            json={
+                "items": [
+                    {
+                        "id": "12345",
+                        "latestVersion": {"id": "678910", "type": "native"},
+                        "sourceFile": {"id": "faketargetfile", "role": "translatable"},
+                    },
+                    {
+                        "id": "12345",
+                        "latestVersion": {"id": "678911", "type": "native"},
+                        "sourceFile": {"id": "faketargetfile", "role": "translatable"},
+                    },
+                ],
+                "itemCount": 2,
+            },
+            status=200,
+        )
+        client = ApiClient()
+
+        # fake the auth step
+        client.is_authenticated = True
+        client.headers = {}
+
+        with self.assertRaises(NotFound):
+            resp = client.download_target_file("fakeproject", "faketargetfile")
+        self.assertEqual(len(responses.calls), 1)
+
+    @responses.activate
+    def test_download_target_file_fail_download(self):
+        responses.add(
+            responses.GET,
+            "https://lc-api.sdl.com/public-api/v1/projects/fakeproject/target-files",
+            json={
+                "items": [
+                    {
+                        "id": "12345",
+                        "latestVersion": {"id": "678910", "type": "native"},
+                        "sourceFile": {"id": "faketargetfile", "role": "translatable"},
+                    }
+                ],
+                "itemCount": 1,
+            },
+            status=200,
+        )
+        responses.add(
+            responses.GET,
+            "https://lc-api.sdl.com/public-api/v1/projects/fakeproject/target-files/12345/versions/678910/download",
+            json={"errorCode": "BAD REQUEST", "message": "nope", "details": []},
+            status=400,
+        )
+        client = ApiClient()
+
+        # fake the auth step
+        client.is_authenticated = True
+        client.headers = {}
+
+        with self.assertRaises(RequestException):
+            resp = client.download_target_file("fakeproject", "faketargetfile")
+        self.assertEqual(len(responses.calls), 2)

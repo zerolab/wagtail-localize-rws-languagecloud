@@ -163,8 +163,13 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "test-media")
 
 WAGTAIL_SITE_NAME = "Wagtail Localize RWS LanguageCloud test site"
 
+WAGTAIL_I18N_ENABLED = True
 
-# wagtail-localize-rws-languagecloud
+LANGUAGES = WAGTAIL_CONTENT_LANGUAGES = [
+    ("en", "English"),
+    ("fr", "French"),
+    ("es", "Spanish")
+]
 
 WAGTAILLOCALIZE_RWS_LANGUAGECLOUD = {}
 
