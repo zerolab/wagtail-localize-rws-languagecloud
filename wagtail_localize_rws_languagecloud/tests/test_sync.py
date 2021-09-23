@@ -1,5 +1,6 @@
 import datetime
 import logging
+import polib
 from unittest.mock import Mock
 from django.test import TestCase, override_settings
 from wagtail.core.models import Page, Locale
@@ -19,6 +20,154 @@ def create_test_page(**kwargs):
     revision.publish()
     source, created = TranslationSource.get_or_create_from_instance(page)
     return page, source
+
+
+def create_test_po(entries):
+    po = polib.POFile(wrapwidth=200)
+    po.metadata = {
+        "POT-Creation-Date": str(datetime.datetime.utcnow()),
+        "MIME-Version": "1.0",
+        "Content-Type": "text/html; charset=utf-8",
+    }
+
+    for entry in entries:
+        po.append(polib.POEntry(msgctxt=entry[0], msgid=entry[1], msgstr=entry[2]))
+
+    return po
+
+
+class TestImport(TestCase):
+    def setUp(self):
+        self.locale_en = Locale.objects.get(language_code="en")
+        self.locale_fr = Locale.objects.create(language_code="fr")
+        self.translations = []
+        self.po_files = []
+        self.lc_projects = []
+        for i in range(0, 2):
+            _, source = create_test_page(
+                title=f"Test page {i}",
+                slug=f"test-page-{i}",
+                test_charfield=f"Some test translatable content {i}",
+            )
+            self.translations.append(
+                Translation.objects.create(
+                    source=source,
+                    target_locale=self.locale_fr,
+                )
+            )
+            self.po_files.append(
+                create_test_po(
+                    [
+                        (
+                            "test_charfield",
+                            f"Some test translatable content {i}",
+                            f"Certains tests de contenu traduisible {i}",
+                        )
+                    ]
+                )
+            )
+            self.lc_projects.append(
+                LanguageCloudProject.objects.create(
+                    translation=self.translations[i],
+                    source_last_updated_at=self.translations[i].source.last_updated_at,
+                    internal_status=LanguageCloudProject.STATUS_NEW,
+                    lc_project_id=f"proj{i}",
+                    lc_source_file_id=f"file{i}",
+                )
+            )
+        self.logger = logging.getLogger(__name__)
+        logging.disable()  # supress log output under test
+
+    def test_import_all_api_calls_succeed(self):
+        client = ApiClient()
+        client.is_authorized = True
+        client.get_project = Mock(
+            side_effect=[{"status": "completed"}, {"status": "completed"}], spec=True
+        )
+        client.download_target_file = Mock(
+            side_effect=[str(self.po_files[0]), str(self.po_files[1])], spec=True
+        )
+        sync._import(client, self.logger)
+        self.assertEqual(client.get_project.call_count, 2)
+        self.assertEqual(client.download_target_file.call_count, 2)
+        lc_projects = [
+            LanguageCloudProject.objects.all().get(
+                translation=t, source_last_updated_at=t.source.last_updated_at
+            )
+            for t in self.translations
+        ]
+        self.assertEqual(
+            lc_projects[0].internal_status, LanguageCloudProject.STATUS_IMPORTED
+        )
+        self.assertEqual(
+            lc_projects[1].internal_status, LanguageCloudProject.STATUS_IMPORTED
+        )
+
+    def test_import_all_get_project_calls_fail(self):
+        client = ApiClient()
+        client.is_authorized = True
+        client.get_project = Mock(side_effect=RequestException("oh no"), spec=True)
+        client.download_target_file = Mock(
+            side_effect=ValueError("this should never be called"), spec=True
+        )
+        sync._import(client, self.logger)
+        self.assertEqual(client.get_project.call_count, 2)
+        self.assertEqual(client.download_target_file.call_count, 0)
+        lc_projects = [
+            LanguageCloudProject.objects.all().get(
+                translation=t, source_last_updated_at=t.source.last_updated_at
+            )
+            for t in self.translations
+        ]
+        self.assertEqual(
+            lc_projects[0].internal_status, LanguageCloudProject.STATUS_NEW
+        )
+        self.assertEqual(
+            lc_projects[1].internal_status, LanguageCloudProject.STATUS_NEW
+        )
+
+    def test_import_some_get_project_calls_fail(self):
+        client = ApiClient()
+        client.is_authorized = True
+        client.get_project = Mock(
+            side_effect=[RequestException("oh no"), {"status": "completed"}], spec=True
+        )
+        client.download_target_file = Mock(
+            side_effect=[str(self.po_files[0]), str(self.po_files[1])], spec=True
+        )
+        sync._import(client, self.logger)
+        self.assertEqual(client.get_project.call_count, 2)
+        self.assertEqual(client.download_target_file.call_count, 1)
+        lc_projects = [
+            LanguageCloudProject.objects.all().get(
+                translation=t, source_last_updated_at=t.source.last_updated_at
+            )
+            for t in self.translations
+        ]
+        self.assertEqual(
+            lc_projects[0].internal_status, LanguageCloudProject.STATUS_NEW
+        )
+        self.assertEqual(
+            lc_projects[1].internal_status, LanguageCloudProject.STATUS_IMPORTED
+        )
+
+    def test_import_no_records_to_process(self):
+        self.lc_projects[0].internal_status = LanguageCloudProject.STATUS_IMPORTED
+        self.lc_projects[0].save()
+        self.lc_projects[1].internal_status = LanguageCloudProject.STATUS_IMPORTED
+        self.lc_projects[1].save()
+
+        client = ApiClient()
+        client.is_authorized = True
+        client.get_project = Mock(
+            side_effect=[{"status": "complete"}, {"status": "complete"}], spec=True
+        )
+        client.download_target_file = Mock(
+            side_effect=[self.po_files[0], self.po_files[1]], spec=True
+        )
+        sync._import(client, self.logger)
+        self.assertEqual(client.get_project.call_count, 0)
+        self.assertEqual(client.download_target_file.call_count, 0)
 
 
 class TestExport(TestCase):
@@ -160,7 +309,7 @@ class TestHelpers(TestCase):
 
     def test_get_project_name_without_custom_prefix(self):
         self.assertEqual(
-            sync._get_project_name(self.translation, self.locale_en), "Test page_fr"
+            sync._get_project_name(self.translation, self.locale_en), "Test page_French"
         )
 
     @override_settings(
@@ -169,7 +318,7 @@ class TestHelpers(TestCase):
     def test_get_project_name_with_custom_prefix(self):
         self.assertEqual(
             sync._get_project_name(self.translation, self.locale_en),
-            "Website_Test page_fr",
+            "Website_Test page_French",
         )
 
     @freeze_time("2018-02-02 12:00:01")
