@@ -5,8 +5,9 @@ from wagtail.admin.models import get_object_usage
 from wagtail.core.models import Locale, Page
 from wagtail_localize.models import Translation
 from requests.exceptions import RequestException
+from .importer import Importer
 from .models import LanguageCloudProject
-from .rws_client import ApiClient
+from .rws_client import ApiClient, NotFound
 
 
 def _get_project_name(translation, source_locale):
@@ -103,6 +104,7 @@ def _create_source_file(
 
 
 def _export(client, logger):
+    logger.info("Exporting translations to LanguageCloud...")
     source_locale = Locale.get_default()
     target_locales = Locale.objects.exclude(id=source_locale.id)
     translations = (
@@ -164,8 +166,52 @@ def _export(client, logger):
 
 
 def _import(client, logger):
-    # TODO
-    pass
+    logger.info("Importing translations from LanguageCloud...")
+    lc_projects = (
+        LanguageCloudProject.objects.all()
+        .exclude(internal_status=LanguageCloudProject.STATUS_IMPORTED)
+        .exclude(lc_project_id="")
+        .exclude(lc_source_file_id="")
+        .order_by("id")
+    )
+
+    for db_project in lc_projects:
+        source_locale = db_project.translation.source.locale
+        target_locale = db_project.translation.target_locale
+        logger.info(
+            f"Processing Translation {db_project.translation.uuid}\n"
+            f"       {str(db_project.translation.source.object.get_instance(source_locale))}\n"
+            f"       {str(source_locale)} --> {str(target_locale)} "
+        )
+
+        try:
+            api_project = client.get_project(db_project.lc_project_id)
+        except RequestException:
+            logger.error(
+                f"Failed to fetch status for project {db_project.lc_project_id}"
+            )
+            continue
+
+        if api_project["status"] != "completed":
+            continue
+
+        try:
+            target_file = client.download_target_file(
+                db_project.lc_project_id,
+                db_project.lc_source_file_id,
+            )
+        except (RequestException, KeyError):
+            logger.error(
+                f"Failed to download target file for source file {db_project.lc_source_file_id}"
+            )
+            continue
+
+        logger.info("Importing translations from target file")
+        importer = Importer(db_project, logger)
+        importer.import_po(db_project.translation, target_file)
+        logger.info(
+            f"Successfully imported translations for {db_project.translation.uuid}"
+        )
 
 
 class SyncManager:

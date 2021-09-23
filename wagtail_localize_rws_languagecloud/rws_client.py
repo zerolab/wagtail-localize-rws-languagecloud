@@ -7,6 +7,11 @@ import requests
 class NotAuthenticated(Exception):
     pass
 
+
+class NotFound(Exception):
+    pass
+
+
 class ApiClient:
     def __init__(self, logger=None):
         self.logger = logger or logging.getLogger(__name__)
@@ -71,7 +76,9 @@ class ApiClient:
         r.raise_for_status()
         return r.json()
 
-    def create_source_file(self, project_id, po_file, filename, source_locale, target_locale):
+    def create_source_file(
+        self, project_id, po_file, filename, source_locale, target_locale
+    ):
         self.logger.debug("create_source_file")
         if not self.is_authenticated:
             raise NotAuthenticated()
@@ -97,3 +104,49 @@ class ApiClient:
         self.logger.debug(r.text)
         r.raise_for_status()
         return r.json()
+
+    def get_project(self, project_id):
+        self.logger.debug("get_project")
+        if not self.is_authenticated:
+            raise NotAuthenticated()
+
+        r = requests.get(
+            f"{self.api_base}/projects/{project_id}",
+            params={"fields": "id,name,description,dueBy,createdAt,status"},
+            headers=self.headers,
+        )
+        self.logger.debug(r.text)
+        r.raise_for_status()
+        return r.json()
+
+    def download_target_file(self, project_id, source_file_id):
+        self.logger.debug("download_target_file")
+        if not self.is_authenticated:
+            raise NotAuthenticated()
+
+        list_req = requests.get(
+            f"{self.api_base}/projects/{project_id}/target-files",
+            params={"fields": "sourceFile,latestVersion"},
+            headers=self.headers,
+        )
+        self.logger.debug(list_req.text)
+        list_req.raise_for_status()
+        target_files = list_req.json()
+
+        matches = [
+            tf
+            for tf in target_files["items"]
+            if tf["sourceFile"]["id"] == source_file_id
+            and tf["latestVersion"]["type"] == "native"
+        ]
+        if len(matches) != 1:
+            raise NotFound(f"Expected 1 target file, found {len(matches)}")
+
+        download_req = requests.get(
+            f"{self.api_base}/projects/{project_id}/target-files/{matches[0]['id']}/versions/{matches[0]['latestVersion']['id']}/download",
+            headers=self.headers,
+        )
+        self.logger.debug(download_req.text)
+        download_req.raise_for_status()
+
+        return download_req.text
