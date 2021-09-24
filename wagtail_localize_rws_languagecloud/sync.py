@@ -193,6 +193,7 @@ def _import(client, logger):
             continue
 
         if api_project["status"] != "completed":
+            logger.info(f"LanguageCloud Project Status: \"{api_project['status']}\". Skipping..")
             continue
 
         try:
