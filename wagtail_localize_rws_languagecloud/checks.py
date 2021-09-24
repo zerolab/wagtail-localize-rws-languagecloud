@@ -25,7 +25,14 @@ def languagecloud_settings_check(app_configs, **kwargs):
         )
         return errors
 
-    for setting in ["CLIENT_ID", "CLIENT_SECRET", "ACCOUNT_ID", "TEMPLATE_ID"]:
+    required_settings = [
+        "CLIENT_ID",
+        "CLIENT_SECRET",
+        "ACCOUNT_ID",
+        "TEMPLATE_ID",
+        "LOCATION_ID"
+    ]
+    for setting in required_settings:
         if setting not in settings.WAGTAILLOCALIZE_RWS_LANGUAGECLOUD:
             errors.append(
                 Error(
