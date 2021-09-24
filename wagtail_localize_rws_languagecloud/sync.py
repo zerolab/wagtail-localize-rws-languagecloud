@@ -13,7 +13,8 @@ from .rws_client import ApiClient, NotFound
 def _get_project_name(translation, source_locale):
     object_name = str(translation.source.object.get_instance(source_locale))
     prefix = settings.WAGTAILLOCALIZE_RWS_LANGUAGECLOUD.get("PROJECT_PREFIX", "")
-    return f"{prefix}{object_name}_{str(translation.target_locale)}"
+    now = datetime.datetime.utcnow()
+    return f"{prefix}{object_name}_{str(translation.target_locale)}_{now:%Y-%m-%d}"
 
 
 def _get_project_due_date():

@@ -307,18 +307,21 @@ class TestHelpers(TestCase):
         self.logger = logging.getLogger(__name__)
         logging.disable()  # supress log output under test
 
+    @freeze_time("2018-02-02 12:00:01")
     def test_get_project_name_without_custom_prefix(self):
         self.assertEqual(
-            sync._get_project_name(self.translation, self.locale_en), "Test page_French"
+            sync._get_project_name(self.translation, self.locale_en),
+            "Test page_French_2018-02-02"
         )
 
+    @freeze_time("2018-02-02 12:00:01")
     @override_settings(
         WAGTAILLOCALIZE_RWS_LANGUAGECLOUD={"PROJECT_PREFIX": "Website_"},
     )
     def test_get_project_name_with_custom_prefix(self):
         self.assertEqual(
             sync._get_project_name(self.translation, self.locale_en),
-            "Website_Test page_French",
+            "Website_Test page_French_2018-02-02",
         )
 
     @freeze_time("2018-02-02 12:00:01")
