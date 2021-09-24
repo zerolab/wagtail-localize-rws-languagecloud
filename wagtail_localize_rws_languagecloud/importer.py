@@ -35,7 +35,7 @@ class Importer:
                 )
 
         try:
-            translation.save_target()
+            translation.save_target(publish=False)
 
         except MissingRelatedObjectError:
             # Ignore error if there was a missing related object
