@@ -232,8 +232,8 @@ class SyncManager:
         client = ApiClient(self.logger)
         client.authenticate()
 
-        _export(client, self.logger)
         _import(client, self.logger)
+        _export(client, self.logger)
 
         self.logger.info("...Done")
 
