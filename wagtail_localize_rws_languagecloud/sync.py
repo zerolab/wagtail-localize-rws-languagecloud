@@ -110,7 +110,7 @@ def _export(client, logger):
             source__locale=source_locale, target_locale__in=target_locales, enabled=True
         )
         .select_related("source", "target_locale")
-        .order_by("target_locale__language_code")
+        .order_by("target_locale__language_code", "id")
     )
 
     for translation in translations:
