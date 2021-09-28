@@ -163,4 +163,12 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "test-media")
 
 WAGTAIL_SITE_NAME = "Wagtail Localize RWS LanguageCloud test site"
 
+
+# wagtail-localize-rws-languagecloud
+
 WAGTAILLOCALIZE_RWS_LANGUAGECLOUD = {}
+
+# Skip the checks for missing individual LanguageCloud settings under test
+# we will set up the settings we need for each test case
+# using the @override_settings decorator
+SILENCED_SYSTEM_CHECKS = ['wagtail_localize_rws_languagecloud.E002']
