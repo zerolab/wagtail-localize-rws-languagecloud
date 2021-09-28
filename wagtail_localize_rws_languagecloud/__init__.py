@@ -1,5 +1,3 @@
-from . import checks
-
 default_app_config = "wagtail_localize_rws_languagecloud.apps.WagtailLocalizeRwsLanguageCloudAppConfig"
 
 
