@@ -7,6 +7,7 @@ from wagtail_localize.models import TranslationSource, Translation
 from wagtail_localize.test.models import TestPage
 from freezegun import freeze_time
 from requests.exceptions import RequestException
+from ..models import LanguageCloudProject
 from ..rws_client import ApiClient, NotAuthenticated
 import wagtail_localize_rws_languagecloud.sync as sync
 
@@ -43,11 +44,29 @@ class TestExport(TestCase):
     def test_export_all_api_calls_succeed(self):
         client = ApiClient()
         client.is_authorized = True
-        client.create_project = Mock(return_value={"id": "abc123"}, spec=True)
-        client.create_source_file = Mock(return_value={"id": "abc123"}, spec=True)
+        client.create_project = Mock(
+            side_effect=[{"id": "abc123"}, {"id": "abc456"}], spec=True
+        )
+        client.create_source_file = Mock(
+            side_effect=[{"id": "def123"}, {"id": "def456"}], spec=True
+        )
         sync._export(client, self.logger)
         self.assertEqual(client.create_project.call_count, 2)
         self.assertEqual(client.create_source_file.call_count, 2)
+        lc_projects = [
+            LanguageCloudProject.objects.all().get(
+                translation=t, source_last_updated_at=t.source.last_updated_at
+            )
+            for t in self.translations
+        ]
+        self.assertEqual(lc_projects[0].lc_project_id, "abc123")
+        self.assertEqual(lc_projects[0].lc_source_file_id, "def123")
+        self.assertEqual(lc_projects[0].project_create_attempts, 1)
+        self.assertEqual(lc_projects[0].source_file_create_attempts, 1)
+        self.assertEqual(lc_projects[1].lc_project_id, "abc456")
+        self.assertEqual(lc_projects[1].lc_source_file_id, "def456")
+        self.assertEqual(lc_projects[1].project_create_attempts, 1)
+        self.assertEqual(lc_projects[1].source_file_create_attempts, 1)
 
     def test_export_all_create_project_api_calls_fail(self):
         client = ApiClient()
@@ -59,17 +78,68 @@ class TestExport(TestCase):
         sync._export(client, self.logger)
         self.assertEqual(client.create_project.call_count, 2)
         self.assertEqual(client.create_source_file.call_count, 0)
+        lc_projects = [
+            LanguageCloudProject.objects.all().get(
+                translation=t, source_last_updated_at=t.source.last_updated_at
+            )
+            for t in self.translations
+        ]
+        self.assertEqual(lc_projects[0].lc_project_id, "")
+        self.assertEqual(lc_projects[0].lc_source_file_id, "")
+        self.assertEqual(lc_projects[0].project_create_attempts, 1)
+        self.assertEqual(lc_projects[0].source_file_create_attempts, 0)
+        self.assertEqual(lc_projects[1].lc_project_id, "")
+        self.assertEqual(lc_projects[1].lc_source_file_id, "")
+        self.assertEqual(lc_projects[1].project_create_attempts, 1)
+        self.assertEqual(lc_projects[1].source_file_create_attempts, 0)
 
     def test_export_some_create_project_api_calls_fail(self):
         client = ApiClient()
         client.is_authorized = True
         client.create_project = Mock(
-            side_effect=[RequestException("oh no"), {"id": "abc123"}], spec=True
+            side_effect=[RequestException("oh no"), {"id": "abc456"}], spec=True
         )
-        client.create_source_file = Mock(return_value={"id": "abc123"}, spec=True)
+        client.create_source_file = Mock(side_effect=[{"id": "def456"}], spec=True)
         sync._export(client, self.logger)
         self.assertEqual(client.create_project.call_count, 2)
         self.assertEqual(client.create_source_file.call_count, 1)
+        lc_projects = [
+            LanguageCloudProject.objects.all().get(
+                translation=t, source_last_updated_at=t.source.last_updated_at
+            )
+            for t in self.translations
+        ]
+        self.assertEqual(lc_projects[0].lc_project_id, "")
+        self.assertEqual(lc_projects[0].lc_source_file_id, "")
+        self.assertEqual(lc_projects[0].project_create_attempts, 1)
+        self.assertEqual(lc_projects[0].source_file_create_attempts, 0)
+        self.assertEqual(lc_projects[1].lc_project_id, "abc456")
+        self.assertEqual(lc_projects[1].lc_source_file_id, "def456")
+        self.assertEqual(lc_projects[1].project_create_attempts, 1)
+        self.assertEqual(lc_projects[1].source_file_create_attempts, 1)
+
+    def test_export_no_records_to_process(self):
+        LanguageCloudProject.objects.create(
+            translation=self.translations[0],
+            source_last_updated_at=self.translations[0].source.last_updated_at,
+            internal_status=LanguageCloudProject.STATUS_IMPORTED,
+        )
+        LanguageCloudProject.objects.create(
+            translation=self.translations[1],
+            source_last_updated_at=self.translations[1].source.last_updated_at,
+            internal_status=LanguageCloudProject.STATUS_IMPORTED,
+        )
+        client = ApiClient()
+        client.is_authorized = True
+        client.create_project = Mock(
+            side_effect=[{"id": "abc123"}, {"id": "abc456"}], spec=True
+        )
+        client.create_source_file = Mock(
+            side_effect=[{"id": "def123"}, {"id": "def456"}], spec=True
+        )
+        sync._export(client, self.logger)
+        self.assertEqual(client.create_project.call_count, 0)
+        self.assertEqual(client.create_source_file.call_count, 0)
 
 
 class TestHelpers(TestCase):
@@ -85,6 +155,8 @@ class TestHelpers(TestCase):
             source=source,
             target_locale=self.locale_fr,
         )
+        self.logger = logging.getLogger(__name__)
+        logging.disable()  # supress log output under test
 
     def test_get_project_name_without_custom_prefix(self):
         self.assertEqual(
@@ -110,3 +182,170 @@ class TestHelpers(TestCase):
     )
     def test_get_project_due_date_with_custom_delta(self):
         self.assertEqual(sync._get_project_due_date(), "2018-02-16T12:00:01.000Z")
+
+    def test_create_project_success(self):
+        lc_project = LanguageCloudProject(
+            translation=self.translation,
+            source_last_updated_at=self.translation.source.last_updated_at,
+        )
+        client = ApiClient()
+        client.is_authorized = True
+        client.create_project = Mock(return_value={"id": "abc123"}, spec=True)
+        id_ = sync._create_project(
+            lc_project,
+            client,
+            "faketitle",
+            "2020-01-01T00:00:01.000Z",
+            "fakedesc",
+        )
+        lc_project.refresh_from_db()
+        self.assertEqual(id_, "abc123")
+        self.assertEqual(lc_project.lc_project_id, "abc123")
+        self.assertEqual(lc_project.project_create_attempts, 1)
+
+    def test_create_project_fail(self):
+        lc_project = LanguageCloudProject(
+            translation=self.translation,
+            source_last_updated_at=self.translation.source.last_updated_at,
+        )
+        client = ApiClient()
+        client.is_authorized = True
+        client.create_project = Mock(side_effect=RequestException("oh no"), spec=True)
+        with self.assertRaises(RequestException):
+            sync._create_project(
+                lc_project,
+                client,
+                "faketitle",
+                "2020-01-01T00:00:01.000Z",
+                "fakedesc",
+            )
+        lc_project.refresh_from_db()
+        self.assertEqual(lc_project.lc_project_id, "")
+        self.assertEqual(lc_project.project_create_attempts, 1)
+
+    def test_create_source_file_success(self):
+        lc_project = LanguageCloudProject(
+            translation=self.translation,
+            source_last_updated_at=self.translation.source.last_updated_at,
+        )
+        client = ApiClient()
+        client.is_authorized = True
+        client.create_source_file = Mock(return_value={"id": "abc123"}, spec=True)
+        sync._create_source_file(
+            lc_project,
+            client,
+            "fakeproject",
+            "fakepo",
+            "fakefilename.po",
+            "en-US",
+            "fr-CA",
+        )
+        lc_project.refresh_from_db()
+        self.assertEqual(lc_project.lc_source_file_id, "abc123")
+        self.assertEqual(lc_project.source_file_create_attempts, 1)
+
+    def test_create_source_file_fail(self):
+        lc_project = LanguageCloudProject(
+            translation=self.translation,
+            source_last_updated_at=self.translation.source.last_updated_at,
+        )
+        client = ApiClient()
+        client.is_authorized = True
+        client.create_source_file = Mock(
+            side_effect=RequestException("oh no"), spec=True
+        )
+        with self.assertRaises(RequestException):
+            sync._create_source_file(
+                lc_project,
+                client,
+                "fakeproject",
+                "fakepo",
+                "fakefilename.po",
+                "en-US",
+                "fr-CA",
+            )
+        lc_project.refresh_from_db()
+        self.assertEqual(lc_project.lc_source_file_id, "")
+        self.assertEqual(lc_project.source_file_create_attempts, 1)
+
+    def test_should_export_already_imported(self):
+        self.assertFalse(
+            sync._should_export(
+                self.logger,
+                LanguageCloudProject(
+                    translation=self.translation,
+                    source_last_updated_at=self.translation.source.last_updated_at,
+                    internal_status=LanguageCloudProject.STATUS_IMPORTED,
+                ),
+            )
+        )
+
+    def test_should_export_project_and_source_file_created(self):
+        self.assertFalse(
+            sync._should_export(
+                self.logger,
+                LanguageCloudProject(
+                    translation=self.translation,
+                    source_last_updated_at=self.translation.source.last_updated_at,
+                    lc_project_id="abc123",
+                    lc_source_file_id="def456",
+                ),
+            )
+        )
+
+    def test_should_export_too_many_fails(self):
+        self.assertFalse(
+            sync._should_export(
+                self.logger,
+                LanguageCloudProject(
+                    translation=self.translation,
+                    source_last_updated_at=self.translation.source.last_updated_at,
+                    project_create_attempts=3,
+                    source_file_create_attempts=0,
+                ),
+            )
+        )
+        self.assertFalse(
+            sync._should_export(
+                self.logger,
+                LanguageCloudProject(
+                    translation=self.translation,
+                    source_last_updated_at=self.translation.source.last_updated_at,
+                    project_create_attempts=0,
+                    source_file_create_attempts=3,
+                ),
+            )
+        )
+
+    def test_should_should_export(self):
+        self.assertTrue(
+            sync._should_export(
+                self.logger,
+                LanguageCloudProject(
+                    translation=self.translation,
+                    source_last_updated_at=self.translation.source.last_updated_at,
+                ),
+            )
+        )
+        self.assertTrue(
+            sync._should_export(
+                self.logger,
+                LanguageCloudProject(
+                    translation=self.translation,
+                    source_last_updated_at=self.translation.source.last_updated_at,
+                    project_create_attempts=2,
+                    source_file_create_attempts=0,
+                ),
+            )
+        )
+        self.assertTrue(
+            sync._should_export(
+                self.logger,
+                LanguageCloudProject(
+                    translation=self.translation,
+                    source_last_updated_at=self.translation.source.last_updated_at,
+                    project_create_attempts=2,
+                    source_file_create_attempts=2,
+                ),
+            )
+        )
