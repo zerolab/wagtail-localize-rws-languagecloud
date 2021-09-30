@@ -12,6 +12,9 @@ class NotFound(Exception):
     pass
 
 
+REQUEST_TIMEOUT = 10
+
+
 class ApiClient:
     def __init__(self, logger=None):
         self.logger = logger or logging.getLogger(__name__)
@@ -41,6 +44,7 @@ class ApiClient:
                     "CLIENT_SECRET"
                 ],
             },
+            timeout=REQUEST_TIMEOUT,
         )
         self.logger.debug(r.text)
         r.raise_for_status()
@@ -72,6 +76,7 @@ class ApiClient:
             f"{self.api_base}/projects",
             body,
             headers=self.headers,
+            timeout=REQUEST_TIMEOUT,
         )
         self.logger.debug(r.text)
         r.raise_for_status()
@@ -101,6 +106,7 @@ class ApiClient:
             data=body,
             files=files,
             headers=self.headers,
+            timeout=REQUEST_TIMEOUT,
         )
         self.logger.debug(r.text)
         r.raise_for_status()
@@ -115,6 +121,7 @@ class ApiClient:
             f"{self.api_base}/projects/{project_id}",
             params={"fields": "id,name,description,dueBy,createdAt,status"},
             headers=self.headers,
+            timeout=REQUEST_TIMEOUT,
         )
         self.logger.debug(r.text)
         r.raise_for_status()
@@ -129,6 +136,7 @@ class ApiClient:
             f"{self.api_base}/projects/{project_id}/target-files",
             params={"fields": "sourceFile,latestVersion"},
             headers=self.headers,
+            timeout=REQUEST_TIMEOUT,
         )
         self.logger.debug(list_req.text)
         list_req.raise_for_status()
@@ -146,6 +154,7 @@ class ApiClient:
         download_req = requests.get(
             f"{self.api_base}/projects/{project_id}/target-files/{matches[0]['id']}/versions/{matches[0]['latestVersion']['id']}/download",
             headers=self.headers,
+            timeout=REQUEST_TIMEOUT,
         )
         self.logger.debug(download_req.text)
         download_req.raise_for_status()
