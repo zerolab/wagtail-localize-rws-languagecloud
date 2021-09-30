@@ -1,6 +1,6 @@
 # Wagtail Localize RWS LanguageCloud
 
-This allows users of [RWS LanguageCloud](https://www.rws.com/translation/language-cloud/) to translate and localize Wagtail CMD content.
+This allows users of [RWS LanguageCloud](https://www.rws.com/translation/language-cloud/) to translate and localize Wagtail CMS content.
 
 ## Requirements
 
@@ -12,7 +12,7 @@ This allows users of [RWS LanguageCloud](https://www.rws.com/translation/languag
 ## Setup
 
 1. `pip install TODO...`
-2. Add to `INSTALLED_APPS` in django settings:
+2. Add to `INSTALLED_APPS` in Django settings:
 
     ```python
     INSTALLED_APPS = [
@@ -21,15 +21,14 @@ This allows users of [RWS LanguageCloud](https://www.rws.com/translation/languag
     ]
     ```
 
-3. Configure the plugin in django settings:
+3. Configure the plugin in Django settings:
 
     ```python
     import datetime
 
     WAGTAILLOCALIZE_RWS_LANGUAGECLOUD = {
-        # (required) Authentication details to connect to the LanguageCloud API
-        # see https://languagecloud.sdl.com/lc/api-docs/authenticate
-        # for info on how to obtain these credentials
+        # (required) Authentication details to connect to the LanguageCloud API.
+        # For info on how to obtain these credentials see https://languagecloud.sdl.com/lc/api-docs/authenticate
         'CLIENT_ID': '<client id>',
         'CLIENT_SECRET': '<client secret>',
         'ACCOUNT_ID': '<account id>',
@@ -52,7 +51,7 @@ This allows users of [RWS LanguageCloud](https://www.rws.com/translation/languag
 
 ## Synchronisation
 
-Wagtail-localize-rws-languagecloud uses a background job to:
+This plugin uses a background job to:
 
 - Identify text in wagtail which is pending localization and export it to LanguageCloud
 - Identify completed projects in LanguageCloud and import the localized content back into Wagtail
