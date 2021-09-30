@@ -60,6 +60,7 @@ class ApiClient:
                 "projectTemplate": {
                     "id": settings.WAGTAILLOCALIZE_RWS_LANGUAGECLOUD["TEMPLATE_ID"]
                 },
+                "location": settings.WAGTAILLOCALIZE_RWS_LANGUAGECLOUD["LOCATION_ID"],
             }
         )
         r = requests.post(

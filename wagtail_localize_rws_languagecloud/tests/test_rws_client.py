@@ -108,7 +108,10 @@ class TestApiClient(TestCase):
             client.create_project("faketitle", "2020-01-01T00:00:01.000Z", "fakedesc")
 
     @override_settings(
-        WAGTAILLOCALIZE_RWS_LANGUAGECLOUD={"TEMPLATE_ID": "faketemplate"},
+        WAGTAILLOCALIZE_RWS_LANGUAGECLOUD={
+            "TEMPLATE_ID": "faketemplate",
+            "LOCATION_ID": "fakelocation",
+        },
     )
     @responses.activate
     def test_create_project_success(self):
@@ -134,13 +137,17 @@ class TestApiClient(TestCase):
                 "dueBy": "2020-01-01T00:00:01.000Z",
                 "description": "fakedesc",
                 "projectTemplate": {"id": "faketemplate"},
+                "location": "fakelocation",
             },
             json.loads(responses.calls[0].request.body),
         )
         self.assertEqual(resp, {"id": "123456"})
 
     @override_settings(
-        WAGTAILLOCALIZE_RWS_LANGUAGECLOUD={"TEMPLATE_ID": "faketemplate"},
+        WAGTAILLOCALIZE_RWS_LANGUAGECLOUD={
+            "TEMPLATE_ID": "faketemplate",
+            "LOCATION_ID": "fakelocation",
+        },
     )
     @responses.activate
     def test_create_project_fail(self):
