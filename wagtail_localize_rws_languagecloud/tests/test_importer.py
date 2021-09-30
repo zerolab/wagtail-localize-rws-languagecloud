@@ -12,7 +12,7 @@ from wagtail_localize.models import (
     Translation,
     MissingRelatedObjectError,
 )
-from wagtail_localize.test.models import TestPage
+from wagtail_localize.test.models import TestPage, TestSnippet
 
 from ..importer import Importer
 
@@ -55,7 +55,7 @@ class TestImporter(TestCase):
             target_locale=self.locale,
         )
 
-    def test_importer(self):
+    def test_importer_page(self):
         po = create_test_po(
             [
                 (
@@ -107,6 +107,34 @@ class TestImporter(TestCase):
             translated_page.test_synchronized_charfield,
             "The test synchronized field",
         )
+
+        self.assertEqual(project_mock.save.call_count, 1)
+
+    def test_importer_snippet(self):
+        snippet = TestSnippet.objects.create(field="Test snippet")
+        source, created = TranslationSource.get_or_create_from_instance(snippet)
+        po = create_test_po(
+            [
+                (
+                    "field",
+                    "Test snippet",
+                    "Extrait de test",
+                )
+            ]
+        )
+        translation = Translation.objects.create(
+            source=source,
+            target_locale=self.locale,
+        )
+
+        project_mock = mock.Mock()
+        importer = Importer(project_mock, logging.getLogger("dummy"))
+        importer.import_po(translation, str(po))
+
+        # Check translated snippet
+        translated_snippet = TestSnippet.objects.get(locale=self.locale)
+        self.assertEqual(translated_snippet.translation_key, snippet.translation_key)
+        self.assertEqual(translated_snippet.field, "Extrait de test")
 
         self.assertEqual(project_mock.save.call_count, 1)
 
