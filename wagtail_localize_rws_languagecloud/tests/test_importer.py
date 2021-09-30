@@ -2,7 +2,7 @@ import logging
 from unittest import mock
 
 import polib
-from django.core.exceptions import ValidationError
+from django.core.exceptions import SuspiciousOperation, ValidationError
 from django.test import TestCase
 from django.utils import timezone
 
@@ -225,6 +225,11 @@ class TestImporter(TestCase):
             "Unable to translate 'Test page' into French: ValidationError({'slug': ['This slug is already in use.']})"
         )
 
+    def test_importer_suspicious(self):
+        project_mock = mock.Mock()
+        importer = Importer(project_mock, logging.getLogger("dummy"))
+        with self.assertRaises(SuspiciousOperation):
+            importer.import_po(self.translation, '/etc/passwd')
 
 class TestImporterRichText(TestCase):
     def setUp(self):

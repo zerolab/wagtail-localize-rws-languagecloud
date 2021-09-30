@@ -210,7 +210,11 @@ def _import(client, logger):
 
         logger.info("Importing translations from target file")
         importer = Importer(db_project, logger)
-        importer.import_po(db_project.translation, target_file)
+        try:
+            importer.import_po(db_project.translation, target_file)
+        except SuspiciousOperation as e:
+            logger.error(str(e))
+            continue
         logger.info(
             f"Successfully imported translations for {db_project.translation.uuid}"
         )
