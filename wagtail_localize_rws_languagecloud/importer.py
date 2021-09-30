@@ -1,5 +1,6 @@
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from wagtail.core.models import Page
 from wagtail_localize.models import (
     MissingRelatedObjectError,
     StringNotUsedInContext,
@@ -35,7 +36,12 @@ class Importer:
                 )
 
         try:
-            translation.save_target(publish=False)
+            # Don't attempt to save draft if the object isn't a page to avoid a CannotSaveDraftError
+            translation.save_target(
+                publish=not issubclass(
+                    translation.source.specific_content_type.model_class(), Page
+                )
+            )
 
         except MissingRelatedObjectError:
             # Ignore error if there was a missing related object
