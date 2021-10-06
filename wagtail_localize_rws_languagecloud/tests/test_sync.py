@@ -299,9 +299,9 @@ class TestHelpers(TestCase):
         self.locale_en = Locale.objects.get(language_code="en")
         self.locale_fr = Locale.objects.create(language_code="fr")
         _, source = create_test_page(
-            title=f"Test page",
-            slug=f"test-page",
-            test_charfield=f"Some test translatable content",
+            title="Test page",
+            slug="test-page",
+            test_charfield="Some test translatable content",
         )
         self.translation = Translation.objects.create(
             source=source,
