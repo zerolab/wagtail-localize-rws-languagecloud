@@ -209,7 +209,7 @@ def _import(client, logger):
                 db_project.lc_project_id,
                 db_project.lc_source_file_id,
             )
-        except (RequestException, KeyError):
+        except (RequestException, KeyError, NotFound):
             logger.error(
                 f"Failed to download target file for source file {db_project.lc_source_file_id}"
             )
