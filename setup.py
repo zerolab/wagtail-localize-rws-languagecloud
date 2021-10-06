@@ -6,7 +6,6 @@ from setuptools import find_packages, setup
 
 from wagtail_localize_rws_languagecloud import __version__
 
-
 this_directory = path.abspath(path.dirname(__file__))
 with open(path.join(this_directory, "README.md"), encoding="utf-8") as f:
     long_description = f.read()
@@ -16,7 +15,7 @@ setup(
     version=__version__,
     description="Python Boilerplate contains all the boilerplate you need to create a Python package.",
     long_description=long_description,
-    long_description_content_type='text/markdown',
+    long_description_content_type="text/markdown",
     author="Chris Shaw",
     author_email="chris.shaw@torchbox.com",
     url="",

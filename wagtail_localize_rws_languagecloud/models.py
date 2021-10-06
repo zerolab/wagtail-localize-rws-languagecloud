@@ -5,7 +5,7 @@ from wagtail_localize.models import Translation
 class LanguageCloudProject(models.Model):
     STATUS_NEW = "new"
     STATUS_IMPORTED = "imported"
-    STATUS_CHOICES = [(STATUS_NEW , STATUS_NEW), (STATUS_IMPORTED, STATUS_IMPORTED)]
+    STATUS_CHOICES = [(STATUS_NEW, STATUS_NEW), (STATUS_IMPORTED, STATUS_IMPORTED)]
 
     translation = models.ForeignKey(Translation, on_delete=models.CASCADE)
     source_last_updated_at = models.DateTimeField()

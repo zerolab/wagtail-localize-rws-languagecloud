@@ -1,10 +1,12 @@
 import datetime
 import logging
+
 from django.conf import settings
+from requests.exceptions import RequestException
 from wagtail.admin.models import get_object_usage
 from wagtail.core.models import Locale, Page
 from wagtail_localize.models import Translation
-from requests.exceptions import RequestException
+
 from .importer import Importer
 from .models import LanguageCloudProject
 from .rws_client import ApiClient, NotFound
@@ -27,7 +29,7 @@ def _get_project_due_date():
 
 
 def _get_project_description(translation, source_locale):
-    description = ''
+    description = ""
 
     # TODO: Add user who initiated the translation
     # Once we add a form to the page
@@ -138,7 +140,9 @@ def _export(client, logger):
 
         if not project_id:
             try:
-                project_id = _create_project(lc_project, client, name, due_by, description)
+                project_id = _create_project(
+                    lc_project, client, name, due_by, description
+                )
             except (RequestException, KeyError):
                 logger.error("Failed to create project")
                 continue
@@ -194,7 +198,9 @@ def _import(client, logger):
             continue
 
         if api_project["status"] != "completed":
-            logger.info(f"LanguageCloud Project Status: \"{api_project['status']}\". Skipping..")
+            logger.info(
+                f"LanguageCloud Project Status: \"{api_project['status']}\". Skipping.."
+            )
             continue
 
         try:

@@ -6,6 +6,5 @@ class WagtailLocalizeRwsLanguageCloudAppConfig(AppConfig):
     name = "wagtail_localize_rws_languagecloud"
     verbose_name = "Wagtail Localize RWS LanguageCloud"
 
-
     def ready(self):
         import wagtail_localize_rws_languagecloud.checks

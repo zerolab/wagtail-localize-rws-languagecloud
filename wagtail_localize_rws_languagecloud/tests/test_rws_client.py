@@ -1,8 +1,10 @@
 import json
 from urllib.parse import parse_qs
+
+import responses
 from django.test import TestCase, override_settings
 from requests.exceptions import RequestException
-import responses
+
 from ..rws_client import ApiClient, NotAuthenticated, NotFound
 
 

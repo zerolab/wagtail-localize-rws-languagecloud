@@ -6,13 +6,17 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('wagtail_localize_rws_languagecloud', '0001_initial'),
+        ("wagtail_localize_rws_languagecloud", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='languagecloudproject',
-            name='internal_status',
-            field=models.CharField(choices=[('new', 'new'), ('imported', 'imported')], default='new', max_length=255),
+            model_name="languagecloudproject",
+            name="internal_status",
+            field=models.CharField(
+                choices=[("new", "new"), ("imported", "imported")],
+                default="new",
+                max_length=255,
+            ),
         ),
     ]
