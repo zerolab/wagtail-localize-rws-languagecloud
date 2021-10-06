@@ -13,7 +13,7 @@ from wagtail_localize.test.models import TestPage
 import wagtail_localize_rws_languagecloud.sync as sync
 
 from ..models import LanguageCloudProject
-from ..rws_client import ApiClient, NotAuthenticated
+from ..rws_client import ApiClient
 
 
 def create_test_page(**kwargs):
