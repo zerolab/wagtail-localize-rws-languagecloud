@@ -238,7 +238,7 @@ class SyncManager:
         Calling authenticate() will request an OAUth token
         which can be used for the duration of the session
         (a token expires after 24 hours).
-        
+
         We can't do anything without auth, so there is no try/except here.
         If we throw an exception invoking ApiClient() the error is fatal.
         """
