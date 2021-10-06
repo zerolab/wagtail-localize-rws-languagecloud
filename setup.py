@@ -48,7 +48,10 @@ setup(
         "testing": [
             "dj-database-url==0.5.0",
             "freezegun==0.3.15",
-            "responses==0.13.4"
+            "responses==0.13.4",
+            "flake8==3.9.2",
+            "black==21.9b0",
+            "isort==5.9.3",
         ],
     },
     zip_safe=False,
