@@ -1,13 +1,6 @@
 name: Localize RWS LanguageCloud CI
 
-on:
-  push:
-    branches:
-      - main
-      - master
-      - 'stable/**'
-
-  pull_request:
+on: [push, pull_request]
 
 jobs:
   lint:
