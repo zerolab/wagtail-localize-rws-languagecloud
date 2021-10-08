@@ -30,7 +30,7 @@ def languagecloud_settings_check(app_configs, **kwargs):
         "CLIENT_SECRET",
         "ACCOUNT_ID",
         "TEMPLATE_ID",
-        "LOCATION_ID"
+        "LOCATION_ID",
     ]
     for setting in required_settings:
         if setting not in settings.WAGTAILLOCALIZE_RWS_LANGUAGECLOUD:

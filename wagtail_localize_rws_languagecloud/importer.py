@@ -1,3 +1,4 @@
+import polib
 from django.core.exceptions import SuspiciousOperation, ValidationError
 from django.db import transaction
 from wagtail.core.models import Page
@@ -7,7 +8,7 @@ from wagtail_localize.models import (
     UnknownContext,
     UnknownString,
 )
-import polib
+
 from .models import LanguageCloudProject
 
 
@@ -19,7 +20,9 @@ class Importer:
     @transaction.atomic
     def import_po(self, translation, target_file):
         if polib._is_file(target_file):
-            raise SuspiciousOperation(f"Expected PO file as string, received {target_file}")
+            raise SuspiciousOperation(
+                f"Expected PO file as string, received {target_file}"
+            )
 
         warnings = translation.import_po(polib.pofile(target_file))
         for warning in warnings:

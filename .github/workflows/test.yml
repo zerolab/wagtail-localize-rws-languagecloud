@@ -1,16 +1,26 @@
 name: Localize RWS LanguageCloud CI
 
-on:
-  push:
-    branches:
-      - main
-      - master
-      - 'stable/**'
-
-  pull_request:
+on: [push, pull_request]
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - name: Install Tox
+        run: |
+          python -m pip install tox
+      - name: Lint
+        run: tox
+        env:
+          TOXENV: lint
+
   test-sqlite:
+    needs: lint
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -36,6 +46,7 @@ jobs:
           TOXENV: python${{ matrix.python }}-${{ matrix.django-wagtail }}-sqlite
 
   test-postgres:
+    needs: lint
     runs-on: ubuntu-latest
     strategy:
       matrix:

@@ -1,10 +1,13 @@
 import datetime
 import logging
+
 from django.conf import settings
+from django.core.exceptions import SuspiciousOperation
+from requests.exceptions import RequestException
 from wagtail.admin.models import get_object_usage
 from wagtail.core.models import Locale, Page
 from wagtail_localize.models import Translation
-from requests.exceptions import RequestException
+
 from .importer import Importer
 from .models import LanguageCloudProject
 from .rws_client import ApiClient, NotFound
@@ -27,7 +30,7 @@ def _get_project_due_date():
 
 
 def _get_project_description(translation, source_locale):
-    description = ''
+    description = ""
 
     # TODO: Add user who initiated the translation
     # Once we add a form to the page
@@ -138,7 +141,9 @@ def _export(client, logger):
 
         if not project_id:
             try:
-                project_id = _create_project(lc_project, client, name, due_by, description)
+                project_id = _create_project(
+                    lc_project, client, name, due_by, description
+                )
             except (RequestException, KeyError):
                 logger.error("Failed to create project")
                 continue
@@ -194,7 +199,9 @@ def _import(client, logger):
             continue
 
         if api_project["status"] != "completed":
-            logger.info(f"LanguageCloud Project Status: \"{api_project['status']}\". Skipping..")
+            logger.info(
+                f"LanguageCloud Project Status: \"{api_project['status']}\". Skipping.."
+            )
             continue
 
         try:
@@ -202,7 +209,7 @@ def _import(client, logger):
                 db_project.lc_project_id,
                 db_project.lc_source_file_id,
             )
-        except (RequestException, KeyError):
+        except (RequestException, KeyError, NotFound):
             logger.error(
                 f"Failed to download target file for source file {db_project.lc_source_file_id}"
             )
@@ -231,7 +238,7 @@ class SyncManager:
         Calling authenticate() will request an OAUth token
         which can be used for the duration of the session
         (a token expires after 24 hours).
-        
+
         We can't do anything without auth, so there is no try/except here.
         If we throw an exception invoking ApiClient() the error is fatal.
         """

@@ -8,7 +8,7 @@ from ...sync import SyncManager
 class Command(BaseCommand):
     def handle(self, **options):
         log_level = logging.INFO
-        if options['verbosity'] > 1:
+        if options["verbosity"] > 1:
             log_level = logging.DEBUG
 
         logger = logging.getLogger(__name__)

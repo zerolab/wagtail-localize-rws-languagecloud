@@ -5,12 +5,11 @@ import polib
 from django.core.exceptions import SuspiciousOperation, ValidationError
 from django.test import TestCase
 from django.utils import timezone
-
-from wagtail.core.models import Page, Locale
+from wagtail.core.models import Locale, Page
 from wagtail_localize.models import (
-    TranslationSource,
-    Translation,
     MissingRelatedObjectError,
+    Translation,
+    TranslationSource,
 )
 from wagtail_localize.test.models import TestPage, TestSnippet
 
@@ -229,7 +228,8 @@ class TestImporter(TestCase):
         project_mock = mock.Mock()
         importer = Importer(project_mock, logging.getLogger("dummy"))
         with self.assertRaises(SuspiciousOperation):
-            importer.import_po(self.translation, '/etc/passwd')
+            importer.import_po(self.translation, "/etc/passwd")
+
 
 class TestImporterRichText(TestCase):
     def setUp(self):

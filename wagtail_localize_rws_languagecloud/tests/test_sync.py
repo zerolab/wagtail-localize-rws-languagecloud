@@ -1,16 +1,19 @@
 import datetime
 import logging
-import polib
 from unittest.mock import Mock
+
+import polib
 from django.test import TestCase, override_settings
-from wagtail.core.models import Page, Locale
-from wagtail_localize.models import TranslationSource, Translation
-from wagtail_localize.test.models import TestPage
 from freezegun import freeze_time
 from requests.exceptions import RequestException
-from ..models import LanguageCloudProject
-from ..rws_client import ApiClient, NotAuthenticated
+from wagtail.core.models import Locale, Page
+from wagtail_localize.models import Translation, TranslationSource
+from wagtail_localize.test.models import TestPage
+
 import wagtail_localize_rws_languagecloud.sync as sync
+
+from ..models import LanguageCloudProject
+from ..rws_client import ApiClient
 
 
 def create_test_page(**kwargs):
@@ -296,9 +299,9 @@ class TestHelpers(TestCase):
         self.locale_en = Locale.objects.get(language_code="en")
         self.locale_fr = Locale.objects.create(language_code="fr")
         _, source = create_test_page(
-            title=f"Test page",
-            slug=f"test-page",
-            test_charfield=f"Some test translatable content",
+            title="Test page",
+            slug="test-page",
+            test_charfield="Some test translatable content",
         )
         self.translation = Translation.objects.create(
             source=source,
@@ -311,7 +314,7 @@ class TestHelpers(TestCase):
     def test_get_project_name_without_custom_prefix(self):
         self.assertEqual(
             sync._get_project_name(self.translation, self.locale_en),
-            "Test page_French_2018-02-02"
+            "Test page_French_2018-02-02",
         )
 
     @freeze_time("2018-02-02 12:00:01")

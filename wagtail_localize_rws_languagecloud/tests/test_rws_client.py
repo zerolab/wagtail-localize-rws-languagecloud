@@ -1,8 +1,10 @@
 import json
 from urllib.parse import parse_qs
+
+import responses
 from django.test import TestCase, override_settings
 from requests.exceptions import RequestException
-import responses
+
 from ..rws_client import ApiClient, NotAuthenticated, NotFound
 
 
@@ -299,7 +301,7 @@ class TestApiClient(TestCase):
         client.headers = {}
 
         with self.assertRaises(RequestException):
-            resp = client.download_target_file("fakeproject", "faketargetfile")
+            client.download_target_file("fakeproject", "faketargetfile")
         self.assertEqual(len(responses.calls), 1)
 
     @responses.activate
@@ -326,7 +328,7 @@ class TestApiClient(TestCase):
         client.headers = {}
 
         with self.assertRaises(NotFound):
-            resp = client.download_target_file("fakeproject", "faketargetfile")
+            client.download_target_file("fakeproject", "faketargetfile")
         self.assertEqual(len(responses.calls), 1)
 
     @responses.activate
@@ -358,7 +360,7 @@ class TestApiClient(TestCase):
         client.headers = {}
 
         with self.assertRaises(NotFound):
-            resp = client.download_target_file("fakeproject", "faketargetfile")
+            client.download_target_file("fakeproject", "faketargetfile")
         self.assertEqual(len(responses.calls), 1)
 
     @responses.activate
@@ -391,5 +393,5 @@ class TestApiClient(TestCase):
         client.headers = {}
 
         with self.assertRaises(RequestException):
-            resp = client.download_target_file("fakeproject", "faketargetfile")
+            client.download_target_file("fakeproject", "faketargetfile")
         self.assertEqual(len(responses.calls), 2)

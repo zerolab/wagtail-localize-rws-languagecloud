@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/1.10/ref/settings/
 """
 
 import os
+
 import dj_database_url
 
 # Build paths inside the project like this: os.path.join(PROJECT_DIR, ...)
@@ -112,7 +113,9 @@ PASSWORD_HASHERS = ("django.contrib.auth.hashers.MD5PasswordHasher",)
 # https://docs.djangoproject.com/en/1.10/ref/settings/#databases
 
 DATABASES = {
-    "default": dj_database_url.config(default="sqlite:///test_wagtail_localize_rws_languagecloud.db"),
+    "default": dj_database_url.config(
+        default="sqlite:///test_wagtail_localize_rws_languagecloud.db"
+    ),
 }
 
 
@@ -168,7 +171,7 @@ WAGTAIL_I18N_ENABLED = True
 LANGUAGES = WAGTAIL_CONTENT_LANGUAGES = [
     ("en", "English"),
     ("fr", "French"),
-    ("es", "Spanish")
+    ("es", "Spanish"),
 ]
 
 WAGTAILLOCALIZE_RWS_LANGUAGECLOUD = {}
@@ -176,4 +179,4 @@ WAGTAILLOCALIZE_RWS_LANGUAGECLOUD = {}
 # Skip the checks for missing individual LanguageCloud settings under test
 # we will set up the settings we need for each test case
 # using the @override_settings decorator
-SILENCED_SYSTEM_CHECKS = ['wagtail_localize_rws_languagecloud.E002']
+SILENCED_SYSTEM_CHECKS = ["wagtail_localize_rws_languagecloud.E002"]
