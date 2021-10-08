@@ -11,7 +11,7 @@ This allows users of [RWS LanguageCloud](https://www.rws.com/translation/languag
 
 ## Setup
 
-1. `pip install TODO...`
+1. `pip install wagtail-localize-rws-languagecloud`
 2. Add to `INSTALLED_APPS` in Django settings:
 
     ```python
@@ -46,6 +46,12 @@ This allows users of [RWS LanguageCloud](https://www.rws.com/translation/languag
         # Defaults to datetime.timedelta(days=7) if not specified
         'DUE_BY_DELTA': datetime.timedelta(days=30),
     }
+    ```
+
+4. Apply migrations:
+
+    ```
+    ./manage.py migrate
     ```
 
 
