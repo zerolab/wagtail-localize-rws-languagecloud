@@ -77,12 +77,12 @@ def _should_export(logger, lc_project):
 
 
 @transaction.atomic
-def _create_local_project(translation):
+def _create_local_project(translation_source):
     lc_project, _ = LanguageCloudProject.objects.get_or_create(
-        translation_source=translation.source,
-        source_last_updated_at=translation.source.last_updated_at,
+        translation_source=translation_source,
+        source_last_updated_at=translation_source.last_updated_at,
     )
-    translations = translation.source.translations.all().filter(enabled=True)
+    translations = translation_source.translations.all().filter(enabled=True)
     for translation in translations:
         LanguageCloudFile.objects.get_or_create(
             translation=translation,
@@ -139,7 +139,7 @@ def _export(client, logger):
             f"       {str(translation.source.object.get_instance(source_locale))}\n"
             f"       {source_locale} --> {str(translation.target_locale)} "
         )
-        lc_project = _create_local_project(translation)
+        lc_project = _create_local_project(translation.source)
 
         if not _should_export(logger, lc_project):
             continue
