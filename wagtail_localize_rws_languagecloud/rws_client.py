@@ -1,5 +1,6 @@
 import json
 import logging
+from time import sleep
 
 import requests
 from django.conf import settings
@@ -32,6 +33,9 @@ class ApiClient:
             "https://lc-api.sdl.com/public-api/v1",
         )
         self.is_authenticated = False
+        self.api_sleep_seconds = settings.WAGTAILLOCALIZE_RWS_LANGUAGECLOUD.get(
+            "API_SLEEP_SECONDS", 0
+        )
 
     def authenticate(self):
         self.logger.debug("authenticate")
@@ -49,6 +53,7 @@ class ApiClient:
         )
         self.logger.debug(r.text)
         r.raise_for_status()
+        sleep(self.api_sleep_seconds)
 
         self.is_authenticated = True
         self.token = r.json()["access_token"]
@@ -81,6 +86,7 @@ class ApiClient:
         )
         self.logger.debug(r.text)
         r.raise_for_status()
+        sleep(self.api_sleep_seconds)
         return r.json()
 
     def create_source_file(
@@ -111,6 +117,7 @@ class ApiClient:
         )
         self.logger.debug(r.text)
         r.raise_for_status()
+        sleep(self.api_sleep_seconds)
         return r.json()
 
     def get_project(self, project_id):
@@ -126,6 +133,7 @@ class ApiClient:
         )
         self.logger.debug(r.text)
         r.raise_for_status()
+        sleep(self.api_sleep_seconds)
         return r.json()
 
     def download_target_file(self, project_id, source_file_id):
@@ -141,6 +149,7 @@ class ApiClient:
         )
         self.logger.debug(list_req.text)
         list_req.raise_for_status()
+        sleep(self.api_sleep_seconds)
         target_files = list_req.json()
 
         matches = [
@@ -159,5 +168,6 @@ class ApiClient:
         )
         self.logger.debug(download_req.text)
         download_req.raise_for_status()
+        sleep(self.api_sleep_seconds)
 
         return download_req.text
