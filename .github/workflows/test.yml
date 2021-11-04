@@ -30,6 +30,7 @@ jobs:
           - 'django3.1-wagtail2.11'
           - 'django3.1-wagtail2.14'
           - 'django3.2-wagtail2.14'
+          - 'django3.2-wagtail2.15'
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.python }}
@@ -57,6 +58,7 @@ jobs:
           - 'django3.1-wagtail2.11'
           - 'django3.1-wagtail2.14'
           - 'django3.2-wagtail2.14'
+          - 'django3.2-wagtail2.15'
 
     services:
       postgres:
