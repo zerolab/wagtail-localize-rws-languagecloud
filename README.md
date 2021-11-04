@@ -45,6 +45,10 @@ This allows users of [RWS LanguageCloud](https://www.rws.com/translation/languag
         # (optional) A timedelta object used to set the project 'due by' date.
         # Defaults to datetime.timedelta(days=7) if not specified
         'DUE_BY_DELTA': datetime.timedelta(days=30),
+
+        # (optional) Number of a seconds to sleep between each API request.
+        # Defaults to 0 if not specified
+        'API_SLEEP_SECONDS': 5,
     }
     ```
 
