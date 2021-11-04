@@ -9,12 +9,12 @@ from wagtail_localize.models import (
     UnknownString,
 )
 
-from .models import LanguageCloudProject
+from .models import LanguageCloudFile
 
 
 class Importer:
-    def __init__(self, db_project, logger):
-        self.db_project = db_project
+    def __init__(self, db_source_file, logger):
+        self.db_source_file = db_source_file
         self.logger = logger
 
     @transaction.atomic
@@ -65,5 +65,5 @@ class Importer:
                 f"Unable to translate '{translation.source.object_repr}' into {translation.target_locale.get_display_name()}: {repr(e)}"
             )
 
-        self.db_project.internal_status = LanguageCloudProject.STATUS_IMPORTED
-        self.db_project.save()
+        self.db_source_file.internal_status = LanguageCloudFile.STATUS_IMPORTED
+        self.db_source_file.save()

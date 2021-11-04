@@ -65,8 +65,8 @@ class TestImporter(TestCase):
             ]
         )
 
-        project_mock = mock.Mock()
-        importer = Importer(project_mock, logging.getLogger("dummy"))
+        file_mock = mock.Mock()
+        importer = Importer(file_mock, logging.getLogger("dummy"))
         importer.import_po(self.translation, str(po))
 
         # Check translated page was created
@@ -78,7 +78,7 @@ class TestImporter(TestCase):
             "The test synchronized field",
         )
 
-        self.assertEqual(project_mock.save.call_count, 1)
+        self.assertEqual(file_mock.save.call_count, 1)
 
         # Perform another import updating the page
         # Much easier to do it this way than trying to construct all the models manually to match the result of the last test
@@ -92,8 +92,8 @@ class TestImporter(TestCase):
             ]
         )
 
-        project_mock = mock.Mock()
-        importer = Importer(project_mock, logging.getLogger("dummy"))
+        file_mock = mock.Mock()
+        importer = Importer(file_mock, logging.getLogger("dummy"))
         importer.import_po(self.translation, str(po))
 
         translated_page.refresh_from_db()
@@ -107,7 +107,7 @@ class TestImporter(TestCase):
             "The test synchronized field",
         )
 
-        self.assertEqual(project_mock.save.call_count, 1)
+        self.assertEqual(file_mock.save.call_count, 1)
 
     def test_importer_snippet(self):
         snippet = TestSnippet.objects.create(field="Test snippet")
@@ -126,8 +126,8 @@ class TestImporter(TestCase):
             target_locale=self.locale,
         )
 
-        project_mock = mock.Mock()
-        importer = Importer(project_mock, logging.getLogger("dummy"))
+        file_mock = mock.Mock()
+        importer = Importer(file_mock, logging.getLogger("dummy"))
         importer.import_po(translation, str(po))
 
         # Check translated snippet
@@ -135,7 +135,7 @@ class TestImporter(TestCase):
         self.assertEqual(translated_snippet.translation_key, snippet.translation_key)
         self.assertEqual(translated_snippet.field, "Extrait de test")
 
-        self.assertEqual(project_mock.save.call_count, 1)
+        self.assertEqual(file_mock.save.call_count, 1)
 
     def test_importer_warnings(self):
         po = create_test_po(
@@ -225,8 +225,8 @@ class TestImporter(TestCase):
         )
 
     def test_importer_suspicious(self):
-        project_mock = mock.Mock()
-        importer = Importer(project_mock, logging.getLogger("dummy"))
+        file_mock = mock.Mock()
+        importer = Importer(file_mock, logging.getLogger("dummy"))
         with self.assertRaises(SuspiciousOperation):
             importer.import_po(self.translation, "/etc/passwd")
 
