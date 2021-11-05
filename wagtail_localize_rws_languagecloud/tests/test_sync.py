@@ -168,6 +168,30 @@ class TestImport(TestCase):
         self.assertEqual(client.get_project.call_count, 0)
         self.assertEqual(client.download_target_file.call_count, 0)
 
+    def test_import_with_an_exception_finished_processing(self):
+        client = ApiClient()
+        client.is_authorized = True
+        client.get_project = Mock(
+            side_effect=[{"status": "completed"}, Exception()], spec=True
+        )
+        client.download_target_file = Mock(
+            side_effect=[str(self.po_files[0]), str(self.po_files[1])], spec=True
+        )
+
+        sync._import(client, self.logger)
+        self.assertEqual(client.get_project.call_count, 2)
+        self.assertEqual(client.download_target_file.call_count, 1)
+
+        self.lc_projects[0].refresh_from_db()
+        self.assertEqual(
+            self.lc_projects[0].internal_status, LanguageCloudProject.STATUS_IMPORTED
+        )
+
+        self.lc_projects[1].refresh_from_db()
+        self.assertEqual(
+            self.lc_projects[1].internal_status, LanguageCloudProject.STATUS_NEW
+        )
+
 
 class TestExport(TestCase):
     def setUp(self):
@@ -380,6 +404,29 @@ class TestExport(TestCase):
         sync._export(client, self.logger)
         self.assertEqual(client.create_project.call_count, 0)
         self.assertEqual(client.create_source_file.call_count, 0)
+
+    def test_export_with_an_exception_finished_processing(self):
+        client = ApiClient()
+        client.is_authorized = True
+        client.create_project = Mock(
+            side_effect=[{"id": "proj1"}, Exception()], spec=True
+        )
+        client.create_source_file = Mock(
+            side_effect=[{"id": "file1"}, {"id": "file2"}, {"id": "file3"}],
+            spec=True,
+        )
+        sync._export(client, self.logger)
+        self.assertEqual(client.create_project.call_count, 3)
+        self.assertEqual(client.create_source_file.call_count, 2)
+
+        lc_projects = [
+            LanguageCloudProject.objects.all().get(
+                translation_source=s,
+                source_last_updated_at=s.last_updated_at,
+            )
+            for s in self.sources
+        ]
+        self.assertEqual(len(lc_projects), 2)
 
 
 class TestHelpers(TestCase):
