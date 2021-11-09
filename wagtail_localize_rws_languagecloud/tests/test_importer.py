@@ -1,11 +1,14 @@
 import logging
+
 from unittest import mock
 
 import polib
+
 from django.core.exceptions import SuspiciousOperation, ValidationError
 from django.test import TestCase
 from django.utils import timezone
 from wagtail.core.models import Locale, Page
+
 from wagtail_localize.models import (
     MissingRelatedObjectError,
     Translation,

@@ -7,6 +7,7 @@ from django.db import transaction
 from requests.exceptions import RequestException
 from wagtail.admin.models import get_object_usage
 from wagtail.core.models import Locale, Page
+
 from wagtail_localize.models import Translation
 
 from .importer import Importer
