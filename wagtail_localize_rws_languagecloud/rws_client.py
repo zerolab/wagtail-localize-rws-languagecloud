@@ -1,8 +1,10 @@
 import json
 import logging
+
 from time import sleep
 
 import requests
+
 from django.conf import settings
 
 

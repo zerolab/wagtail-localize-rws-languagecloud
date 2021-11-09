@@ -14,50 +14,44 @@ This allows users of [RWS LanguageCloud](https://www.rws.com/translation/languag
 1. `pip install wagtail-localize-rws-languagecloud`
 2. Add to `INSTALLED_APPS` in Django settings:
 
-    ```python
-    INSTALLED_APPS = [
-        ...
-        'wagtail_localize_rws_languagecloud',
-    ]
-    ```
+   ```python
+   INSTALLED_APPS = [
+       # ...
+       "wagtail_localize_rws_languagecloud",
+   ]
+   ```
 
 3. Configure the plugin in Django settings:
 
-    ```python
-    import datetime
+   ```python
+   import datetime
 
-    WAGTAILLOCALIZE_RWS_LANGUAGECLOUD = {
-        # (required) Authentication details to connect to the LanguageCloud API.
-        # For info on how to obtain these credentials see https://languagecloud.sdl.com/lc/api-docs/authenticate
-        'CLIENT_ID': '<client id>',
-        'CLIENT_SECRET': '<client secret>',
-        'ACCOUNT_ID': '<account id>',
-
-        # (required) Identifier of a LanguageCloud template to create projects from
-        'TEMPLATE_ID': '<template id>',
-
-        # (required) Identifier of a LanguageCloud location to store project files in
-        'LOCATION_ID': '<location id>',
-
-        # (optional) Prefix for project names. Defaults to '' if not specified
-        'PROJECT_PREFIX': 'foobar_',
-
-        # (optional) A timedelta object used to set the project 'due by' date.
-        # Defaults to datetime.timedelta(days=7) if not specified
-        'DUE_BY_DELTA': datetime.timedelta(days=30),
-
-        # (optional) Number of a seconds to sleep between each API request.
-        # Defaults to 0 if not specified
-        'API_SLEEP_SECONDS': 5,
-    }
-    ```
+   WAGTAILLOCALIZE_RWS_LANGUAGECLOUD = {
+       # (required) Authentication details to connect to the LanguageCloud API.
+       # For info on how to obtain these credentials see https://languagecloud.sdl.com/lc/api-docs/authenticate
+       "CLIENT_ID": "<client id>",
+       "CLIENT_SECRET": "<client secret>",
+       "ACCOUNT_ID": "<account id>",
+       # (required) Identifier of a LanguageCloud template to create projects from
+       "TEMPLATE_ID": "<template id>",
+       # (required) Identifier of a LanguageCloud location to store project files in
+       "LOCATION_ID": "<location id>",
+       # (optional) Prefix for project names. Defaults to '' if not specified
+       "PROJECT_PREFIX": "foobar_",
+       # (optional) A timedelta object used to set the project 'due by' date.
+       # Defaults to datetime.timedelta(days=7) if not specified
+       "DUE_BY_DELTA": datetime.timedelta(days=30),
+       # (optional) Number of a seconds to sleep between each API request.
+       # Defaults to 0 if not specified
+       "API_SLEEP_SECONDS": 5,
+   }
+   ```
 
 4. Apply migrations:
 
-    ```
-    ./manage.py migrate
-    ```
-
+   ```
+   ./manage.py migrate
+   ```
 
 ## Synchronisation
 
@@ -78,3 +72,32 @@ This can be run on a regular basis using a scheduler like cron. We recommend an 
 This plugin uses `wagtail-localize` to convert pages into segments and build new pages from translated segments. `wagtail-localize` provides a web interface for translating these segments in Wagtail itself and this plugin plays nicely with that (translations can be made from the Wagtail side too).
 
 Pages/snippets are submitted to LanguageCloud when they are submitted for translation from the default locale. Pages authored in other locales are not supported yet.
+
+## Contributing
+
+All contributions are welcome!
+
+### Install
+
+To make changes to this project, first clone this repository,
+then with your preferred virtualenv activated, install testing dependencies:
+
+```shell
+make install
+```
+
+### pre-commit
+
+Note that this project uses [pre-commit](https://github.com/pre-commit/pre-commit). To set up locally:
+
+```shell
+# if you don't have it yet, globally
+$ pip install pre-commit
+# go to the project directory
+$ cd wagtail-localize-rws-languagecloud
+# initialize pre-commit
+$ pre-commit install
+
+# Optional, run all checks once for this, then the checks will run only on the changed files
+$ pre-commit run --all-files
+```

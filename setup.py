@@ -6,6 +6,7 @@ from setuptools import find_packages, setup
 
 from wagtail_localize_rws_languagecloud import __version__
 
+
 this_directory = path.abspath(path.dirname(__file__))
 with open(path.join(this_directory, "README.md"), encoding="utf-8") as f:
     long_description = f.read()
@@ -50,7 +51,7 @@ setup(
             "freezegun==0.3.15",
             "responses==0.13.4",
             "flake8==3.9.2",
-            "black==21.9b0",
+            "black==21.10b0",
             "isort==5.9.3",
         ],
     },

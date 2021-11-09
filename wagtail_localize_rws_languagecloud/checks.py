@@ -14,7 +14,7 @@ def languagecloud_settings_check(app_configs, **kwargs):
         return errors
 
     try:
-        getattr(settings, "WAGTAILLOCALIZE_RWS_LANGUAGECLOUD")
+        getattr(settings, "WAGTAILLOCALIZE_RWS_LANGUAGECLOUD")  # noqa:B009
     except AttributeError:
         errors.append(
             Error(

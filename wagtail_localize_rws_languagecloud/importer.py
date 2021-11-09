@@ -1,7 +1,9 @@
 import polib
+
 from django.core.exceptions import SuspiciousOperation, ValidationError
 from django.db import transaction
 from wagtail.core.models import Page
+
 from wagtail_localize.models import (
     MissingRelatedObjectError,
     StringNotUsedInContext,

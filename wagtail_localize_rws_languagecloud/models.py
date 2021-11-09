@@ -1,4 +1,5 @@
 from django.db import models
+
 from wagtail_localize.models import Translation, TranslationSource
 
 
