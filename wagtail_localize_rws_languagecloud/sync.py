@@ -134,56 +134,64 @@ def _export(client, logger):
     )
 
     for translation in translations:
-        logger.info(
-            f"Processing Translation {translation.uuid}\n"
-            f"       {str(translation.source.object.get_instance(source_locale))}\n"
-            f"       {source_locale} --> {str(translation.target_locale)} "
-        )
-        lc_project = _create_local_project(translation.source)
+        try:
+            logger.info(
+                f"Processing Translation {translation.uuid}\n"
+                f"       {str(translation.source.object.get_instance(source_locale))}\n"
+                f"       {source_locale} --> {str(translation.target_locale)} "
+            )
+            lc_project = _create_local_project(translation.source)
 
-        if not _should_export(logger, lc_project):
+            if not _should_export(logger, lc_project):
+                continue
+
+            project_id = lc_project.lc_project_id
+
+            name = _get_project_name(translation.source, source_locale)
+            due_by = _get_project_due_date()
+            description = _get_project_description(translation.source, source_locale)
+
+            if not project_id:
+                try:
+                    project_id = _create_remote_project(
+                        lc_project, client, name, due_by, description
+                    )
+                except (RequestException, KeyError):
+                    logger.error("Failed to create project")
+                    continue
+                logger.info(f"Created project: {project_id}")
+            else:
+                logger.info(f"Already created project: {project_id}. Skipping..")
+
+            lc_source_file = LanguageCloudFile.objects.get(
+                translation=translation,
+                project=lc_project,
+            )
+            source_file_id = lc_source_file.lc_source_file_id
+            if not source_file_id:
+                try:
+                    source_file_id = _create_remote_source_file(
+                        lc_source_file,
+                        client,
+                        project_id,
+                        str(translation.source.export_po()),
+                        f"{name}_{str(translation.target_locale)}.po",
+                        source_locale.language_code,
+                        translation.target_locale.language_code,
+                    )
+                except (RequestException, KeyError):
+                    logger.error("Failed to create source file")
+                    continue
+                logger.info(f"Created source file: {source_file_id}")
+            else:
+                logger.info(
+                    f"Already created source file: {source_file_id}. Skipping.."
+                )
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception:  # noqa
+            logger.exception(f"Failed to process Translation {translation.uuid}")
             continue
-
-        project_id = lc_project.lc_project_id
-
-        name = _get_project_name(translation.source, source_locale)
-        due_by = _get_project_due_date()
-        description = _get_project_description(translation.source, source_locale)
-
-        if not project_id:
-            try:
-                project_id = _create_remote_project(
-                    lc_project, client, name, due_by, description
-                )
-            except (RequestException, KeyError):
-                logger.error("Failed to create project")
-                continue
-            logger.info(f"Created project: {project_id}")
-        else:
-            logger.info(f"Already created project: {project_id}. Skipping..")
-
-        lc_source_file = LanguageCloudFile.objects.get(
-            translation=translation,
-            project=lc_project,
-        )
-        source_file_id = lc_source_file.lc_source_file_id
-        if not source_file_id:
-            try:
-                source_file_id = _create_remote_source_file(
-                    lc_source_file,
-                    client,
-                    project_id,
-                    str(translation.source.export_po()),
-                    f"{name}_{str(translation.target_locale)}.po",
-                    source_locale.language_code,
-                    translation.target_locale.language_code,
-                )
-            except (RequestException, KeyError):
-                logger.error("Failed to create source file")
-                continue
-            logger.info(f"Created source file: {source_file_id}")
-        else:
-            logger.info(f"Already created source file: {source_file_id}. Skipping..")
 
 
 def _import(client, logger):
@@ -196,65 +204,72 @@ def _import(client, logger):
     )
 
     for db_project in lc_projects:
-        source_locale = db_project.translation_source.locale
-        logger.info(
-            f"Processing TranslationSource {str(db_project.translation_source.object.get_instance(source_locale))}"
-        )
-
         try:
-            api_project = client.get_project(db_project.lc_project_id)
-        except RequestException:
-            logger.error(
-                f"Failed to fetch status for project {db_project.lc_project_id}"
-            )
-            continue
-
-        if api_project["status"] != "completed":
+            source_locale = db_project.translation_source.locale
             logger.info(
-                f"LanguageCloud Project Status: \"{api_project['status']}\". Skipping.."
+                f"Processing TranslationSource {str(db_project.translation_source.object.get_instance(source_locale))}"
             )
-            continue
-
-        lc_source_files = (
-            db_project.languagecloudfile_set.all()
-            .exclude(internal_status=LanguageCloudFile.STATUS_IMPORTED)
-            .exclude(lc_source_file_id="")
-            .order_by("id")
-        )
-
-        for db_source_file in lc_source_files:
-            target_locale = db_source_file.translation.target_locale
-            logger.info(
-                f"Processing Translation {db_source_file.translation.uuid}\n"
-                f"       {str(source_locale)} --> {str(target_locale)} "
-            )
-
             try:
-                target_file = client.download_target_file(
-                    db_project.lc_project_id,
-                    db_source_file.lc_source_file_id,
-                )
-            except (RequestException, KeyError, NotFound):
+                api_project = client.get_project(db_project.lc_project_id)
+            except RequestException:
                 logger.error(
-                    f"Failed to download target file for source file {db_source_file.lc_source_file_id}"
+                    f"Failed to fetch status for project {db_project.lc_project_id}"
                 )
                 continue
 
-            logger.info("Importing translations from target file")
-            importer = Importer(db_source_file, logger)
-            try:
-                importer.import_po(db_source_file.translation, target_file)
-            except SuspiciousOperation as e:
-                logger.error(str(e))
+            if api_project["status"] != "completed":
+                logger.info(
+                    f"LanguageCloud Project Status: \"{api_project['status']}\". Skipping.."
+                )
                 continue
-            logger.info(
-                f"Successfully imported translations for {db_source_file.translation.uuid}"
+
+            lc_source_files = (
+                db_project.languagecloudfile_set.all()
+                .exclude(internal_status=LanguageCloudFile.STATUS_IMPORTED)
+                .exclude(lc_source_file_id="")
+                .order_by("id")
             )
 
-        db_project.refresh_from_db()
-        if db_project.all_files_imported:
-            db_project.internal_status = LanguageCloudProject.STATUS_IMPORTED
-            db_project.save()
+            for db_source_file in lc_source_files:
+                target_locale = db_source_file.translation.target_locale
+                logger.info(
+                    f"Processing Translation {db_source_file.translation.uuid}\n"
+                    f"       {str(source_locale)} --> {str(target_locale)} "
+                )
+
+                try:
+                    target_file = client.download_target_file(
+                        db_project.lc_project_id,
+                        db_source_file.lc_source_file_id,
+                    )
+                except (RequestException, KeyError, NotFound):
+                    logger.error(
+                        f"Failed to download target file for source file {db_source_file.lc_source_file_id}"
+                    )
+                    continue
+
+                logger.info("Importing translations from target file")
+                importer = Importer(db_source_file, logger)
+                try:
+                    importer.import_po(db_source_file.translation, target_file)
+                except SuspiciousOperation as e:
+                    logger.error(str(e))
+                    continue
+                logger.info(
+                    f"Successfully imported translations for {db_source_file.translation.uuid}"
+                )
+
+            db_project.refresh_from_db()
+            if db_project.all_files_imported:
+                db_project.internal_status = LanguageCloudProject.STATUS_IMPORTED
+                db_project.save()
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception:  # noqa
+            logger.exception(
+                f"Failed to process translation project {db_project.lc_project_id}"
+            )
+            continue
 
 
 class SyncManager:
