@@ -5,6 +5,7 @@ from wagtail.core.models import Page
 
 from wagtail_localize.components import register_translation_component
 from wagtail_localize.models import Translation, TranslationSource
+from wagtail_localize_rws_languagecloud.forms import LanguageCloudProjectSettingsForm
 
 
 class StatusModel(models.Model):
@@ -155,6 +156,8 @@ class LanguageCloudFile(StatusModel):
     disable_text=gettext_lazy("Do not send to RWS Cloud"),
 )
 class LanguageCloudProjectSettings(models.Model):
+    base_form_class = LanguageCloudProjectSettingsForm
+
     translation_source = models.ForeignKey(
         TranslationSource, on_delete=models.CASCADE, editable=False
     )
