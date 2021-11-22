@@ -65,6 +65,10 @@ class ApiClient:
         }
 
     def create_project(self, name, due_by, description):
+        """
+        Creates a new project.
+        https://languagecloud.sdl.com/lc/api-docs/rest-api/project/createproject
+        """
         self.logger.debug("create_project")
         if not self.is_authenticated:
             raise NotAuthenticated()
@@ -94,6 +98,10 @@ class ApiClient:
     def create_source_file(
         self, project_id, po_file, filename, source_locale, target_locale
     ):
+        """
+        Adds a source file to a project.
+        https://languagecloud.sdl.com/lc/api-docs/rest-api/source-file/addsourcefile
+        """
         self.logger.debug("create_source_file")
         if not self.is_authenticated:
             raise NotAuthenticated()
@@ -123,6 +131,10 @@ class ApiClient:
         return r.json()
 
     def get_project(self, project_id):
+        """
+        Retrieves a project by id.
+        https://languagecloud.sdl.com/lc/api-docs/rest-api/project/getproject
+        """
         self.logger.debug("get_project")
         if not self.is_authenticated:
             raise NotAuthenticated()
@@ -139,6 +151,11 @@ class ApiClient:
         return r.json()
 
     def download_target_file(self, project_id, source_file_id):
+        """
+        Retrieves a targer file for the project
+        https://languagecloud.sdl.com/lc/api-docs/rest-api/target-file/listtargetfiles
+        https://languagecloud.sdl.com/lc/api-docs/rest-api/target-file/downloadfileversion
+        """
         self.logger.debug("download_target_file")
         if not self.is_authenticated:
             raise NotAuthenticated()
@@ -173,3 +190,23 @@ class ApiClient:
         sleep(self.api_sleep_seconds)
 
         return download_req.text
+
+    def get_project_templates(self):
+        """
+        Fetches project templates.
+        https://languagecloud.sdl.com/lc/api-docs/rest-api/project-template/listprojecttemplates
+        """
+        self.logger.debug("get_project_templates")
+        if not self.is_authenticated:
+            raise NotAuthenticated()
+
+        r = requests.get(
+            f"{self.api_base}/project-templates",
+            params={"fields": "id,name,location"},
+            headers=self.headers,
+            timeout=REQUEST_TIMEOUT,
+        )
+        self.logger.debug(r.text)
+        r.raise_for_status()
+        sleep(self.api_sleep_seconds)
+        return r.json()

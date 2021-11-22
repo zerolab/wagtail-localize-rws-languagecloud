@@ -397,3 +397,39 @@ class TestApiClient(TestCase):
         with self.assertRaises(RequestException):
             client.download_target_file("fakeproject", "faketargetfile")
         self.assertEqual(len(responses.calls), 2)
+
+    @responses.activate
+    def test_get_project_templates_success(self):
+        responses.add(
+            responses.GET,
+            "https://lc-api.sdl.com/public-api/v1/project-templates",
+            json={"items": [{"id": "123456", "name": "Project X"}]},
+            status=200,
+        )
+        client = ApiClient()
+
+        # fake the auth step
+        client.is_authenticated = True
+        client.headers = {}
+
+        resp = client.get_project_templates()
+        self.assertEqual(len(responses.calls), 1)
+        self.assertEqual(resp, {"items": [{"id": "123456", "name": "Project X"}]})
+
+    @responses.activate
+    def test_get_project_templates_fail(self):
+        responses.add(
+            responses.GET,
+            "https://lc-api.sdl.com/public-api/v1/projects-templates",
+            json={"errorCode": "BAD REQUEST", "message": "nope", "details": []},
+            status=400,
+        )
+        client = ApiClient()
+
+        # fake the auth step
+        client.is_authenticated = True
+        client.headers = {}
+
+        with self.assertRaises(RequestException):
+            client.get_project_templates()
+        self.assertEqual(len(responses.calls), 1)
