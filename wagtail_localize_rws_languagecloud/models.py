@@ -3,6 +3,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy
 from wagtail.core.models import Page
 
+from wagtail_localize.components import register_translation_component
 from wagtail_localize.models import Translation, TranslationSource
 
 
@@ -145,6 +146,14 @@ class LanguageCloudFile(StatusModel):
         return gettext_lazy("Unknown")
 
 
+@register_translation_component(
+    heading=gettext_lazy("Send translation to RWS Language Cloud"),
+    help_text=gettext_lazy(
+        "You can modify RWS Language Cloud default project details such name, due date or project option"
+    ),
+    enable_text=gettext_lazy("Send to RWS Cloud"),
+    disable_text=gettext_lazy("Do not send to RWS Cloud"),
+)
 class LanguageCloudProjectSettings(models.Model):
     translation_source = models.ForeignKey(
         TranslationSource, on_delete=models.CASCADE, editable=False
@@ -174,9 +183,26 @@ class LanguageCloudProjectSettings(models.Model):
     name = models.CharField(max_length=255)
     description = models.CharField(max_length=255, blank=True)
     due_date = models.DateTimeField()
-    template_id = models.CharField(max_length=255, verbose_name=gettext_lazy("Project template"))
+    template_id = models.CharField(
+        max_length=255, verbose_name=gettext_lazy("Project template")
+    )
 
     class Meta:
         unique_together = [
             ("translation_source", "source_last_updated_at"),
         ]
+
+    @classmethod
+    def get_or_create_from_source_and_translation_data(
+        cls, translation_source, translations, **kwargs
+    ):
+        project_settings, created = LanguageCloudProjectSettings.objects.get_or_create(
+            translation_source=translation_source,
+            source_last_updated_at=translation_source.last_updated_at,
+            **kwargs
+        )
+
+        if created:
+            project_settings.translations.add(*translations)
+
+        return project_settings, created
