@@ -109,7 +109,13 @@ class TestApiClient(TestCase):
     def test_create_project_not_authenticated(self):
         client = ApiClient()
         with self.assertRaises(NotAuthenticated):
-            client.create_project("faketitle", "2020-01-01T00:00:01.000Z", "fakedesc")
+            client.create_project(
+                "faketitle",
+                "2020-01-01T00:00:01.000Z",
+                "fakedesc",
+                "faketemplate",
+                "fakelocation",
+            )
 
     @override_settings(
         WAGTAILLOCALIZE_RWS_LANGUAGECLOUD={
@@ -132,7 +138,11 @@ class TestApiClient(TestCase):
         client.headers = {}
 
         resp = client.create_project(
-            "faketitle", "2020-01-01T00:00:01.000Z", "fakedesc"
+            "faketitle",
+            "2020-01-01T00:00:01.000Z",
+            "fakedesc",
+            "faketemplate",
+            "fakelocation",
         )
         self.assertEqual(len(responses.calls), 1)
         self.assertDictEqual(
@@ -168,7 +178,13 @@ class TestApiClient(TestCase):
         client.headers = {}
 
         with self.assertRaises(RequestException):
-            client.create_project("faketitle", "2020-01-01T00:00:01.000Z", "fakedesc")
+            client.create_project(
+                "faketitle",
+                "2020-01-01T00:00:01.000Z",
+                "fakedesc",
+                "faketemplate",
+                "fakelocation",
+            )
         self.assertEqual(len(responses.calls), 1)
 
     def test_create_source_file_not_authenticated(self):

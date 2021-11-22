@@ -1,10 +1,8 @@
-import datetime
 import logging
 
 from unittest.mock import Mock
 
 from django.test import TestCase, override_settings
-from freezegun import freeze_time
 from requests.exceptions import RequestException
 from wagtail.core.models import Locale
 
@@ -14,7 +12,7 @@ from wagtail_localize.models import Translation
 
 from ..models import LanguageCloudFile, LanguageCloudProject
 from ..rws_client import ApiClient
-from .helpers import create_test_page, create_test_po
+from .helpers import create_test_page, create_test_po, create_test_project_settings
 
 
 class TestImport(TestCase):
@@ -192,6 +190,7 @@ class TestImport(TestCase):
         )
 
 
+@override_settings(WAGTAILLOCALIZE_RWS_LANGUAGECLOUD={"LOCATION_ID": 123})
 class TestExport(TestCase):
     def setUp(self):
         self.locale_en = Locale.objects.get(language_code="en")
@@ -206,18 +205,33 @@ class TestExport(TestCase):
                 test_charfield=f"Some test translatable content {i}",
             )
             self.sources.append(source)
-            self.translations.append(
-                Translation.objects.create(
-                    source=source,
-                    target_locale=self.locale_fr,
-                )
+            fr_translation = Translation.objects.create(
+                source=source,
+                target_locale=self.locale_fr,
             )
-            self.translations.append(
-                Translation.objects.create(
-                    source=source,
-                    target_locale=self.locale_de,
-                )
+            self.translations.append(fr_translation)
+            de_translation = Translation.objects.create(
+                source=source,
+                target_locale=self.locale_de,
             )
+            self.translations.append(de_translation)
+            create_test_project_settings(source, [fr_translation, de_translation])
+
+        self.get_project_templates_mock = Mock(
+            side_effect=[
+                {
+                    "items": [
+                        {
+                            "id": "123456",
+                            "name": "Project X",
+                            "location": {"id": "1337", "name": "Project Folder"},
+                        }
+                    ],
+                    "itemCount": 1,
+                }
+            ],
+            spec=True,
+        )
         self.logger = logging.getLogger(__name__)
         logging.disable()  # supress log output under test
 
@@ -236,7 +250,9 @@ class TestExport(TestCase):
             ],
             spec=True,
         )
+        client.get_project_templates = self.get_project_templates_mock
         sync._export(client, self.logger)
+
         self.assertEqual(client.create_project.call_count, 2)
         self.assertEqual(client.create_source_file.call_count, 4)
         lc_projects = [
@@ -286,7 +302,9 @@ class TestExport(TestCase):
         client.create_source_file = Mock(
             side_effect=ValueError("this should never be called"), spec=True
         )
+        client.get_project_templates = self.get_project_templates_mock
         sync._export(client, self.logger)
+
         self.assertEqual(client.create_project.call_count, 4)
         self.assertEqual(client.create_source_file.call_count, 0)
 
@@ -317,6 +335,8 @@ class TestExport(TestCase):
         client.create_source_file = Mock(
             side_effect=[{"id": "file3"}, {"id": "file4"}], spec=True
         )
+        client.get_project_templates = self.get_project_templates_mock
+
         sync._export(client, self.logger)
         self.assertEqual(client.create_project.call_count, 3)
         self.assertEqual(client.create_source_file.call_count, 2)
@@ -371,7 +391,9 @@ class TestExport(TestCase):
             ],
             spec=True,
         )
+        client.get_project_templates = self.get_project_templates_mock
         sync._export(client, self.logger)
+
         self.assertEqual(client.create_project.call_count, 2)
         self.assertEqual(client.create_source_file.call_count, 4)
         lc_projects = [
@@ -419,6 +441,7 @@ class TestExport(TestCase):
         )
         client = ApiClient()
         client.is_authorized = True
+        client.get_project_templates = self.get_project_templates_mock
         client.create_project = Mock(
             side_effect=[{"id": "abc123"}, {"id": "abc456"}], spec=True
         )
@@ -432,6 +455,7 @@ class TestExport(TestCase):
     def test_export_with_an_exception_finished_processing(self):
         client = ApiClient()
         client.is_authorized = True
+        client.get_project_templates = self.get_project_templates_mock
         client.create_project = Mock(
             side_effect=[{"id": "proj1"}, Exception()], spec=True
         )
@@ -466,72 +490,54 @@ class TestHelpers(TestCase):
             source=source,
             target_locale=self.locale_fr,
         )
+
         self.logger = logging.getLogger(__name__)
         logging.disable()  # supress log output under test
 
-    @freeze_time("2018-02-02 12:00:01")
-    def test_get_project_name_without_custom_prefix(self):
-        self.assertEqual(
-            sync._get_project_name(self.translation.source, self.locale_en),
-            "Test page_2018-02-02",
+    def _create_project_settings(self, lc_project):
+        lc_project.save()
+        settings, _ = create_test_project_settings(
+            translation_source=self.translation.source,
+            translations=[self.translation],
+            lc_project=lc_project,
         )
+        return settings
 
-    @freeze_time("2018-02-02 12:00:01")
-    @override_settings(
-        WAGTAILLOCALIZE_RWS_LANGUAGECLOUD={"PROJECT_PREFIX": "Website_"},
-    )
-    def test_get_project_name_with_custom_prefix(self):
-        self.assertEqual(
-            sync._get_project_name(self.translation.source, self.locale_en),
-            "Website_Test page_2018-02-02",
-        )
-
-    @freeze_time("2018-02-02 12:00:01")
-    def test_get_project_due_date_without_custom_delta(self):
-        self.assertEqual(sync._get_project_due_date(), "2018-02-09T12:00:01.000Z")
-
-    @freeze_time("2018-02-02 12:00:01")
-    @override_settings(
-        WAGTAILLOCALIZE_RWS_LANGUAGECLOUD={"DUE_BY_DELTA": datetime.timedelta(days=14)},
-    )
-    def test_get_project_due_date_with_custom_delta(self):
-        self.assertEqual(sync._get_project_due_date(), "2018-02-16T12:00:01.000Z")
-
+    @override_settings(WAGTAILLOCALIZE_RWS_LANGUAGECLOUD={"LOCATION_ID": 123})
     def test_create_remote_project_success(self):
         lc_project = LanguageCloudProject.objects.create(
             translation_source=self.translation.source,
             source_last_updated_at=self.translation.source.last_updated_at,
         )
+        self._create_project_settings(lc_project)
+
         client = ApiClient()
         client.is_authorized = True
         client.create_project = Mock(return_value={"id": "abc123"}, spec=True)
         id_ = sync._create_remote_project(
-            lc_project,
-            client,
-            "faketitle",
-            "2020-01-01T00:00:01.000Z",
-            "fakedesc",
+            lc_project, {"project_template_id": "project_location_id"}, client
         )
         lc_project.refresh_from_db()
         self.assertEqual(id_, "abc123")
         self.assertEqual(lc_project.lc_project_id, "abc123")
         self.assertEqual(lc_project.create_attempts, 1)
 
+    @override_settings(WAGTAILLOCALIZE_RWS_LANGUAGECLOUD={"LOCATION_ID": 123})
     def test_create_remote_project_fail(self):
         lc_project = LanguageCloudProject.objects.create(
             translation_source=self.translation.source,
             source_last_updated_at=self.translation.source.last_updated_at,
         )
+        self._create_project_settings(lc_project)
+
         client = ApiClient()
         client.is_authorized = True
         client.create_project = Mock(side_effect=RequestException("oh no"), spec=True)
         with self.assertRaises(RequestException):
             sync._create_remote_project(
                 lc_project,
+                {"project_template_id": "project_location_id"},
                 client,
-                "faketitle",
-                "2020-01-01T00:00:01.000Z",
-                "fakedesc",
             )
         lc_project.refresh_from_db()
         self.assertEqual(lc_project.lc_project_id, "")
@@ -590,7 +596,7 @@ class TestHelpers(TestCase):
         self.assertEqual(lc_source_file.lc_source_file_id, "")
         self.assertEqual(lc_source_file.create_attempts, 1)
 
-    def test_should_export_already_imported(self):
+    def test_should_not_export_already_imported(self):
         self.assertFalse(
             sync._should_export(
                 self.logger,
@@ -608,6 +614,7 @@ class TestHelpers(TestCase):
             source_last_updated_at=self.translation.source.last_updated_at,
             lc_project_id="abc123",
         )
+        self._create_project_settings(lc_project)
         LanguageCloudFile.objects.create(
             translation=self.translation,
             project=lc_project,
@@ -621,6 +628,7 @@ class TestHelpers(TestCase):
             source_last_updated_at=self.translation.source.last_updated_at,
             create_attempts=3,
         )
+        self._create_project_settings(lc_project)
         LanguageCloudFile.objects.create(
             translation=self.translation,
             project=lc_project,
@@ -634,6 +642,7 @@ class TestHelpers(TestCase):
             source_last_updated_at=self.translation.source.last_updated_at,
             create_attempts=0,
         )
+        self._create_project_settings(lc_project)
         LanguageCloudFile.objects.create(
             translation=self.translation,
             project=lc_project,
@@ -642,15 +651,12 @@ class TestHelpers(TestCase):
         self.assertFalse(sync._should_export(self.logger, lc_project))
 
     def test_should_export_new_project(self):
-        self.assertTrue(
-            sync._should_export(
-                self.logger,
-                LanguageCloudProject(
-                    translation_source=self.translation.source,
-                    source_last_updated_at=self.translation.source.last_updated_at,
-                ),
-            )
+        lc_project = LanguageCloudProject(
+            translation_source=self.translation.source,
+            source_last_updated_at=self.translation.source.last_updated_at,
         )
+        self._create_project_settings(lc_project)
+        self.assertTrue(sync._should_export(self.logger, lc_project))
 
     def test_should_export_fails_under_threshold(self):
         lc_project = LanguageCloudProject.objects.create(
@@ -658,6 +664,7 @@ class TestHelpers(TestCase):
             source_last_updated_at=self.translation.source.last_updated_at,
             create_attempts=2,
         )
+        self._create_project_settings(lc_project)
         LanguageCloudFile.objects.create(
             translation=self.translation,
             project=lc_project,

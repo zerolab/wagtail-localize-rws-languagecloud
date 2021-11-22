@@ -64,7 +64,7 @@ class ApiClient:
             "X-LC-Tenant": settings.WAGTAILLOCALIZE_RWS_LANGUAGECLOUD["ACCOUNT_ID"],
         }
 
-    def create_project(self, name, due_by, description):
+    def create_project(self, name, due_by, description, template_id, location_id):
         """
         Creates a new project.
         https://languagecloud.sdl.com/lc/api-docs/rest-api/project/createproject
@@ -78,10 +78,8 @@ class ApiClient:
                 "name": name,
                 "dueBy": due_by,
                 "description": description,
-                "projectTemplate": {
-                    "id": settings.WAGTAILLOCALIZE_RWS_LANGUAGECLOUD["TEMPLATE_ID"]
-                },
-                "location": settings.WAGTAILLOCALIZE_RWS_LANGUAGECLOUD["LOCATION_ID"],
+                "projectTemplate": {"id": template_id},
+                "location": location_id,
             }
         )
         r = requests.post(

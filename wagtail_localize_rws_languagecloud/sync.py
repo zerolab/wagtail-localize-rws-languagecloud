@@ -2,6 +2,7 @@ import datetime
 import logging
 
 from django.conf import settings
+from django.core.cache import cache
 from django.core.exceptions import SuspiciousOperation
 from django.db import transaction
 from requests.exceptions import RequestException
@@ -11,7 +12,11 @@ from wagtail.core.models import Locale, Page
 from wagtail_localize.models import Translation
 
 from .importer import Importer
-from .models import LanguageCloudFile, LanguageCloudProject
+from .models import (
+    LanguageCloudFile,
+    LanguageCloudProject,
+    LanguageCloudProjectSettings,
+)
 from .rws_client import ApiClient, NotFound
 
 
@@ -52,6 +57,27 @@ def _get_project_description(translation_source, source_locale):
     return description
 
 
+def _get_project_templates_and_locations(client: ApiClient):
+    cache_key = "RWS_PROJECT_TEMPLATES"
+
+    cached_templates_and_locations = cache.get(cache_key)
+    if cached_templates_and_locations:
+        return cached_templates_and_locations
+
+    try:
+        templates_and_locations = client.get_project_templates()
+    except RequestException:
+        templates_and_locations = {}
+
+    cached_templates_and_locations = {
+        template["id"]: template["location"]["id"]
+        for template in templates_and_locations.get("items", [])
+    }
+    cache.set(cache_key, cached_templates_and_locations, 60 * 5)
+
+    return cached_templates_and_locations
+
+
 def _should_export(logger, lc_project):
     if lc_project.internal_status == LanguageCloudProject.STATUS_IMPORTED:
         logger.info(
@@ -78,12 +104,16 @@ def _should_export(logger, lc_project):
 
 
 @transaction.atomic
-def _create_local_project(translation_source):
+def _create_local_project(project_settings: LanguageCloudProjectSettings):
     lc_project, _ = LanguageCloudProject.objects.get_or_create(
-        translation_source=translation_source,
-        source_last_updated_at=translation_source.last_updated_at,
+        translation_source=project_settings.translation_source,
+        source_last_updated_at=project_settings.source_last_updated_at,
     )
-    translations = translation_source.translations.all().filter(enabled=True)
+    # link the project settings with the project
+    project_settings.lc_project = lc_project
+    project_settings.save()
+
+    translations = project_settings.translations.all().filter(enabled=True)
     for translation in translations:
         LanguageCloudFile.objects.get_or_create(
             translation=translation,
@@ -92,9 +122,19 @@ def _create_local_project(translation_source):
     return lc_project
 
 
-def _create_remote_project(lc_project, client, name, due_by, description):
+def _create_remote_project(lc_project, project_templates_and_locations, client):
+    name = lc_project.lc_settings.name
+    due_by = lc_project.lc_settings.formatted_due_date
+    description = lc_project.lc_settings.description
+    template_id = lc_project.lc_settings.template_id
+    location_id = project_templates_and_locations.get(
+        template_id, settings.WAGTAILLOCALIZE_RWS_LANGUAGECLOUD["LOCATION_ID"]
+    )
+
     try:
-        create_project_resp = client.create_project(name, due_by, description)
+        create_project_resp = client.create_project(
+            name, due_by, description, template_id, location_id
+        )
         lc_project.lc_project_id = create_project_resp["id"]
         lc_project.lc_project_status = "created"
         lc_project.create_attempts = lc_project.create_attempts + 1
@@ -124,6 +164,13 @@ def _create_remote_source_file(
 
 
 def _export(client, logger):
+    logger.info("Creating LanguageCloud translation projects")
+    unprocessed_project_settings = LanguageCloudProjectSettings.objects.filter(
+        lc_project_id__isnull=True
+    )
+    for project_settings in unprocessed_project_settings:
+        _create_local_project(project_settings)
+
     logger.info("Exporting translations to LanguageCloud...")
     source_locale = Locale.get_default()
     target_locales = Locale.objects.exclude(id=source_locale.id)
@@ -134,6 +181,7 @@ def _export(client, logger):
         .select_related("source", "target_locale")
         .order_by("source__id", "target_locale__language_code", "id")
     )
+    project_templates_and_locations = _get_project_templates_and_locations(client)
 
     for translation in translations:
         try:
@@ -142,21 +190,23 @@ def _export(client, logger):
                 f"       {str(translation.source.object.get_instance(source_locale))}\n"
                 f"       {source_locale} --> {str(translation.target_locale)} "
             )
-            lc_project = _create_local_project(translation.source)
+            try:
+                lc_project = LanguageCloudProject.objects.select_related(
+                    "lc_settings"
+                ).get(translation_source=translation.source, lc_settings__isnull=False)
+            except LanguageCloudProject.DoesNotExist:
+                continue
 
             if not _should_export(logger, lc_project):
                 continue
 
             project_id = lc_project.lc_project_id
-
-            name = _get_project_name(translation.source, source_locale)
-            due_by = _get_project_due_date()
-            description = _get_project_description(translation.source, source_locale)
+            name = lc_project.lc_settings.name
 
             if not project_id:
                 try:
                     project_id = _create_remote_project(
-                        lc_project, client, name, due_by, description
+                        lc_project, project_templates_and_locations, client
                     )
                 except (RequestException, KeyError):
                     logger.error("Failed to create project")

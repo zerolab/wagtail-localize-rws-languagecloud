@@ -209,3 +209,7 @@ class LanguageCloudProjectSettings(models.Model):
             project_settings.translations.add(*translations)
 
         return project_settings, created
+
+    @property
+    def formatted_due_date(self):
+        return self.due_date.strftime("%Y-%m-%dT%H:%M:%S.000Z")
