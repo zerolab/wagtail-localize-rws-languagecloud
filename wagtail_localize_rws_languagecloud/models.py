@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from django.utils.translation import gettext_lazy
 from wagtail.core.models import Page
@@ -142,3 +143,40 @@ class LanguageCloudFile(StatusModel):
             return gettext_lazy("Translations happening in LanguageCloud")
 
         return gettext_lazy("Unknown")
+
+
+class LanguageCloudProjectSettings(models.Model):
+    translation_source = models.ForeignKey(
+        TranslationSource, on_delete=models.CASCADE, editable=False
+    )
+    source_last_updated_at = models.DateTimeField(editable=False)
+    translations = models.ManyToManyField(Translation, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.DO_NOTHING,
+        db_constraint=False,
+        related_name="+",
+    )
+
+    # will be set on cron
+    lc_project = models.OneToOneField(
+        LanguageCloudProject,
+        blank=True,
+        null=True,
+        on_delete=models.CASCADE,
+        editable=False,
+        related_name="lc_settings",
+    )
+
+    # the editable fields
+    name = models.CharField(max_length=255)
+    description = models.CharField(max_length=255, blank=True)
+    due_date = models.DateTimeField()
+    template_id = models.CharField(max_length=255, verbose_name=gettext_lazy("Project template"))
+
+    class Meta:
+        unique_together = [
+            ("translation_source", "source_last_updated_at"),
+        ]
