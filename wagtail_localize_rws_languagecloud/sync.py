@@ -1,4 +1,3 @@
-import datetime
 import logging
 
 from django.conf import settings
@@ -6,8 +5,7 @@ from django.core.cache import cache
 from django.core.exceptions import SuspiciousOperation
 from django.db import transaction
 from requests.exceptions import RequestException
-from wagtail.admin.models import get_object_usage
-from wagtail.core.models import Locale, Page
+from wagtail.core.models import Locale
 
 from wagtail_localize.models import Translation
 
@@ -18,43 +16,6 @@ from .models import (
     LanguageCloudProjectSettings,
 )
 from .rws_client import ApiClient, NotFound
-
-
-def _get_project_name(translation_source, source_locale):
-    object_name = str(translation_source.object.get_instance(source_locale))
-    prefix = settings.WAGTAILLOCALIZE_RWS_LANGUAGECLOUD.get("PROJECT_PREFIX", "")
-    now = datetime.datetime.utcnow()
-    return f"{prefix}{object_name}_{now:%Y-%m-%d}"
-
-
-def _get_project_due_date():
-    now = datetime.datetime.utcnow()
-    delta = settings.WAGTAILLOCALIZE_RWS_LANGUAGECLOUD.get(
-        "DUE_BY_DELTA", datetime.timedelta(days=7)
-    )
-    due_date = now + delta
-    return due_date.strftime("%Y-%m-%dT%H:%M:%S.000Z")
-
-
-def _get_project_description(translation_source, source_locale):
-    description = ""
-
-    # TODO: Add user who initiated the translation
-    # Once we add a form to the page
-    # we can capture the logged in user with the form fields
-
-    instance = translation_source.object.get_instance(source_locale)
-    if isinstance(instance, Page):
-        description = description + (instance.full_url or "")
-        return description
-
-    pages = get_object_usage(instance)
-    # This is only contextual information. If a snippet appears in hundreds of
-    # pages we probably don't need to spam all of them. Just take the first 5.
-    urls = [(page.full_url or "") for page in pages.all()[:5]]
-    description = description + "\n".join(urls)
-
-    return description
 
 
 def _get_project_templates_and_locations(client: ApiClient):
