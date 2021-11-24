@@ -6,7 +6,12 @@ from wagtail_localize.models import Translation, TranslationSource
 class StatusModel(models.Model):
     STATUS_NEW = "new"
     STATUS_IMPORTED = "imported"
-    STATUS_CHOICES = [(STATUS_NEW, STATUS_NEW), (STATUS_IMPORTED, STATUS_IMPORTED)]
+    STATUS_ERROR = "error"
+    STATUS_CHOICES = [
+        (STATUS_NEW, STATUS_NEW),
+        (STATUS_IMPORTED, STATUS_IMPORTED),
+        (STATUS_ERROR, STATUS_ERROR),
+    ]
     internal_status = models.CharField(
         blank=False,
         max_length=255,
