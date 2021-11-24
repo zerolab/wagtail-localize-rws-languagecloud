@@ -39,6 +39,7 @@ class LanguageCloudProject(StatusModel):
         unique_together = [
             ("translation_source", "source_last_updated_at"),
         ]
+        ordering = ["-source_last_updated_at"]
 
     @property
     def all_files_imported(self):
@@ -76,6 +77,7 @@ class LanguageCloudFile(StatusModel):
         unique_together = [
             ("translation", "project"),
         ]
+        ordering = ["-project__source_last_updated_at"]
 
     @property
     def is_created(self):
