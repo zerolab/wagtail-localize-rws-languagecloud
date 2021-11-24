@@ -137,7 +137,10 @@ def _export(client, logger):
     target_locales = Locale.objects.exclude(id=source_locale.id)
     translations = (
         Translation.objects.filter(
-            source__locale=source_locale, target_locale__in=target_locales, enabled=True
+            source__locale=source_locale,
+            target_locale__in=target_locales,
+            enabled=True,
+            languagecloudprojectsettings__isnull=False,
         )
         .select_related("source", "target_locale")
         .order_by("source__id", "target_locale__language_code", "id")

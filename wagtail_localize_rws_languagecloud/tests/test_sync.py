@@ -476,6 +476,44 @@ class TestExport(TestCase):
         ]
         self.assertEqual(len(lc_projects), 2)
 
+    def test_export_will_create_projects_if_they_have_settings(self):
+        _, source = create_test_page(
+            title="Test page N",
+            slug="test-page-n",
+            test_charfield="Some test translatable content",
+        )
+        Translation.objects.create(
+            source=source,
+            target_locale=self.locale_fr,
+        )
+
+        # create a translation that is not included in any project settings
+        Translation.objects.create(
+            source=self.sources[0],
+            target_locale=Locale.objects.create(language_code="ru"),
+        )
+
+        client = ApiClient()
+        client.is_authorized = True
+        client.create_project = Mock(
+            side_effect=[{"id": "proj1"}, {"id": "proj2"}], spec=True
+        )
+        client.create_source_file = Mock(
+            side_effect=[
+                {"id": "file1"},
+                {"id": "file2"},
+                {"id": "file3"},
+                {"id": "file4"},
+            ],
+            spec=True,
+        )
+        client.get_project_templates = self.get_project_templates_mock
+        sync._export(client, self.logger)
+
+        self.assertEqual(LanguageCloudProject.objects.count(), 2)
+        self.assertEqual(client.create_project.call_count, 2)
+        self.assertEqual(client.create_source_file.call_count, 4)
+
 
 class TestHelpers(TestCase):
     def setUp(self):
