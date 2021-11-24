@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 from wagtail.core.models import Page
 
 from wagtail_localize.models import Translation, TranslationSource
@@ -79,12 +79,50 @@ class LanguageCloudProject(StatusModel):
             return None
         return f"https://languagecloud.sdl.com/en/cp/detail?jobId={self.lc_project_id}"
 
+    @transaction.atomic
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        for file_ in self.languagecloudfile_set.all():
+            file_.save()
+
 
 class LanguageCloudFile(StatusModel):
     translation = models.ForeignKey(Translation, on_delete=models.CASCADE)
     project = models.ForeignKey(LanguageCloudProject, on_delete=models.CASCADE)
     lc_source_file_id = models.CharField(blank=True, max_length=255)
     create_attempts = models.IntegerField(default=0)
+
+    COMBINED_STATUS_PROJECT_FAILED = "PROJECT_FAILED"
+    COMBINED_STATUS_TRANSLATIONS_DISABLED = "TRANSLATIONS_DISABLED"
+    COMBINED_STATUS_PO_EXPORT_FAILED = "PO_EXPORT_FAILED"
+    COMBINED_STATUS_NEW = "NEW"
+    COMBINED_STATUS_PROJECT_ARCHIVED = "PROJECT_ARCHIVED"
+    COMBINED_STATUS_TRANSLATIONS_READY = "TRANSLATIONS_READY"
+    COMBINED_STATUS_TRANSLATIONS_PUBLISHED = "TRANSLATIONS_PUBLISHED"
+    COMBINED_STATUS_PO_IMPORT_FAILED = "PO_IMPORT_FAILED"
+    COMBINED_STATUS_PROJECT_IN_PROGRESS = "PROJECT_IN_PROGRESS"
+    COMBINED_STATUS_UNKNOWN = "UNKNOWN"
+    COMBINED_STATUS_CHOICES = [
+        (COMBINED_STATUS_PROJECT_FAILED, "Project creation failed"),
+        (COMBINED_STATUS_TRANSLATIONS_DISABLED, "Translations disabled in Wagtail"),
+        (COMBINED_STATUS_PO_EXPORT_FAILED, "PO File upload failed"),
+        (COMBINED_STATUS_NEW, "Request created"),
+        (COMBINED_STATUS_PROJECT_ARCHIVED, "LanguageCloud project archived"),
+        (COMBINED_STATUS_TRANSLATIONS_READY, "Translations ready for review"),
+        (COMBINED_STATUS_TRANSLATIONS_PUBLISHED, "Translations published"),
+        (COMBINED_STATUS_PO_IMPORT_FAILED, "Error importing PO file"),
+        (
+            COMBINED_STATUS_PROJECT_IN_PROGRESS,
+            "Translations happening in LanguageCloud",
+        ),
+        (COMBINED_STATUS_UNKNOWN, "Unknown"),
+    ]
+    combined_status = models.CharField(
+        blank=False,
+        max_length=255,
+        choices=COMBINED_STATUS_CHOICES,
+        default=COMBINED_STATUS_UNKNOWN,
+    )
 
     class Meta:
         unique_together = [
@@ -109,39 +147,47 @@ class LanguageCloudFile(StatusModel):
             return True
         return not instance.has_unpublished_changes
 
-    @property
-    def combined_status(self):
+    def get_combined_status(self):
         if self.project.lc_project_id == "" and self.project.create_attempts >= 3:
-            return "Project creation failed"
+            return self.COMBINED_STATUS_PROJECT_FAILED
 
         if not self.translation.enabled:
-            return "Translations disabled in Wagtail"
+            return self.COMBINED_STATUS_TRANSLATIONS_DISABLED
 
         if self.is_failed:
-            return "PO File upload failed"
+            return self.COMBINED_STATUS_PO_EXPORT_FAILED
 
         if not self.project.is_created:
-            return "Request created"
+            return self.COMBINED_STATUS_NEW
 
         if self.project.lc_project_status == "archived":
-            return "LanguageCloud project archived"
+            return self.COMBINED_STATUS_PROJECT_ARCHIVED
 
         if (
             self.internal_status == LanguageCloudFile.STATUS_IMPORTED
             and not self.instance_is_published
         ):
-            return "Translations ready for review"
+            return self.COMBINED_STATUS_TRANSLATIONS_READY
 
         if (
             self.internal_status == LanguageCloudFile.STATUS_IMPORTED
             and self.instance_is_published
         ):
-            return "Translations published"
+            return self.COMBINED_STATUS_TRANSLATIONS_PUBLISHED
 
         if self.internal_status == LanguageCloudFile.STATUS_ERROR:
-            return "Error importing PO file"
+            return self.COMBINED_STATUS_PO_IMPORT_FAILED
 
         if self.project.is_created:
-            return "Translations happening in LanguageCloud"
+            return self.COMBINED_STATUS_PROJECT_IN_PROGRESS
 
-        return "Unknown"
+        return self.COMBINED_STATUS_UNKNOWN
+
+    @property
+    def combined_status_for_display(self):
+        lookup = dict(self.COMBINED_STATUS_CHOICES)
+        return lookup[self.combined_status]
+
+    def save(self, *args, **kwargs):
+        self.combined_status = self.get_combined_status()
+        super().save(*args, **kwargs)

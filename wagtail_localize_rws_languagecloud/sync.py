@@ -189,6 +189,7 @@ def _export(client, logger):
                 logger.info(
                     f"Already created source file: {source_file_id}. Skipping.."
                 )
+            lc_project.save()
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:  # noqa
@@ -214,6 +215,7 @@ def _import(client, logger):
             try:
                 api_project = client.get_project(db_project.lc_project_id)
             except RequestException:
+                db_project.save()
                 logger.error(
                     f"Failed to fetch status for project {db_project.lc_project_id}"
                 )
@@ -281,6 +283,7 @@ def _import(client, logger):
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:  # noqa
+            db_project.save()
             logger.exception(
                 f"Failed to process translation project {db_project.lc_project_id}"
             )

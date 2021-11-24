@@ -44,6 +44,10 @@ class LanguageCloudProjectReportFilterSet(WagtailFilterSet):
         label=gettext_lazy("Locale"),
         queryset=Locale.objects.all(),
     )
+    combined_status = django_filters.ChoiceFilter(
+        label=gettext_lazy("Wagtail status"),
+        choices=LanguageCloudFile.COMBINED_STATUS_CHOICES,
+    )
 
 
 class LanguageCloudProjectReportView(ReportView):
