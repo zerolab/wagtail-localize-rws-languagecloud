@@ -2,12 +2,9 @@ import logging
 
 from unittest import mock
 
-import polib
-
 from django.core.exceptions import SuspiciousOperation, ValidationError
 from django.test import TestCase
-from django.utils import timezone
-from wagtail.core.models import Locale, Page
+from wagtail.core.models import Locale
 
 from wagtail_localize.models import (
     MissingRelatedObjectError,
@@ -17,29 +14,7 @@ from wagtail_localize.models import (
 from wagtail_localize.test.models import TestPage, TestSnippet
 
 from ..importer import Importer
-
-
-def create_test_page(**kwargs):
-    parent = kwargs.pop("parent", None) or Page.objects.get(id=1)
-    page = parent.add_child(instance=TestPage(**kwargs))
-    revision = page.save_revision()
-    revision.publish()
-    source, created = TranslationSource.get_or_create_from_instance(page)
-    return page, source
-
-
-def create_test_po(entries):
-    po = polib.POFile(wrapwidth=200)
-    po.metadata = {
-        "POT-Creation-Date": str(timezone.now()),
-        "MIME-Version": "1.0",
-        "Content-Type": "text/html; charset=utf-8",
-    }
-
-    for entry in entries:
-        po.append(polib.POEntry(msgctxt=entry[0], msgid=entry[1], msgstr=entry[2]))
-
-    return po
+from .helpers import create_test_page, create_test_po
 
 
 class TestImporter(TestCase):
