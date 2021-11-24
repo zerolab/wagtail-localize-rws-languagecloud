@@ -1,4 +1,5 @@
 from django.db import models
+from wagtail.core.models import Page
 
 from wagtail_localize.models import Translation, TranslationSource
 
@@ -66,6 +67,18 @@ class LanguageCloudProject(StatusModel):
             True in [f.is_failed for f in self.languagecloudfile_set.all()]
         )
 
+    @property
+    def translation_source_object(self):
+        return self.translation_source.object.get_instance(
+            self.translation_source.locale
+        )
+
+    @property
+    def languagecloud_frontend_url(self):
+        if self.lc_project_id == "":
+            return None
+        return f"https://languagecloud.sdl.com/en/cp/detail?jobId={self.lc_project_id}"
+
 
 class LanguageCloudFile(StatusModel):
     translation = models.ForeignKey(Translation, on_delete=models.CASCADE)
@@ -86,3 +99,49 @@ class LanguageCloudFile(StatusModel):
     @property
     def is_failed(self):
         return self.lc_source_file_id == "" and self.create_attempts >= 3
+
+    @property
+    def instance_is_published(self):
+        instance = self.translation.source.get_translated_instance(
+            self.translation.target_locale
+        )
+        if not isinstance(instance, Page):
+            return True
+        return not instance.has_unpublished_changes
+
+    @property
+    def combined_status(self):
+        if self.project.lc_project_id == "" and self.project.create_attempts >= 3:
+            return "Project creation failed"
+
+        if not self.translation.enabled:
+            return "Translations disabled in Wagtail"
+
+        if self.is_failed:
+            return "PO File upload failed"
+
+        if not self.project.is_created:
+            return "Request created"
+
+        if self.project.lc_project_status == "archived":
+            return "LanguageCloud project archived"
+
+        if (
+            self.internal_status == LanguageCloudFile.STATUS_IMPORTED
+            and not self.instance_is_published
+        ):
+            return "Translations ready for review"
+
+        if (
+            self.internal_status == LanguageCloudFile.STATUS_IMPORTED
+            and self.instance_is_published
+        ):
+            return "Translations published"
+
+        if self.internal_status == LanguageCloudFile.STATUS_ERROR:
+            return "Error importing PO file"
+
+        if self.project.is_created:
+            return "Translations happening in LanguageCloud"
+
+        return "Unknown"
