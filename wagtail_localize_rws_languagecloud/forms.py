@@ -5,6 +5,7 @@ from django import forms
 from django.conf import settings
 from django.utils import timezone
 from django.utils.translation import gettext as _
+from requests import RequestException
 from wagtail.admin.forms import WagtailAdminModelForm
 from wagtail.admin.models import get_object_usage
 from wagtail.core.models import Page
@@ -108,9 +109,12 @@ class LanguageCloudProjectSettingsForm(WagtailAdminModelForm):
 
     def _get_project_templates(self):
         client = ApiClient(logger)
-        client.authenticate()
-
-        return client.get_project_templates()
+        try:
+            client.authenticate()
+            templates = client.get_project_templates(should_sleep=False)
+        except RequestException:
+            templates = {}
+        return templates
 
     def _get_project_template_choices(self):
         project_templates = self._get_project_templates()

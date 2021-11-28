@@ -189,7 +189,7 @@ class ApiClient:
 
         return download_req.text
 
-    def get_project_templates(self):
+    def get_project_templates(self, should_sleep=True):
         """
         Fetches project templates.
         https://languagecloud.sdl.com/lc/api-docs/rest-api/project-template/listprojecttemplates
@@ -206,5 +206,6 @@ class ApiClient:
         )
         self.logger.debug(r.text)
         r.raise_for_status()
-        sleep(self.api_sleep_seconds)
+        if should_sleep:
+            sleep(self.api_sleep_seconds)
         return r.json()
