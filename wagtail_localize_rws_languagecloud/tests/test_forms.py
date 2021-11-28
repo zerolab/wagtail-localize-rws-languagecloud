@@ -9,6 +9,7 @@ from django import forms
 from django.test import TestCase, override_settings
 from freezegun import freeze_time
 from wagtail.admin.edit_handlers import get_form_for_model
+from wagtail.tests.utils import WagtailTestUtils
 
 from wagtail_localize_rws_languagecloud.forms import LanguageCloudProjectSettingsForm
 from wagtail_localize_rws_languagecloud.models import LanguageCloudProjectSettings
@@ -28,7 +29,7 @@ mockApiClient.get_project_templates = mock.Mock(
 @mock.patch("wagtail_localize_rws_languagecloud.forms.ApiClient", new=mockApiClient)
 @override_settings(WAGTAILLOCALIZE_RWS_LANGUAGECLOUD={"TEMPLATE_ID": "c0ffee"})
 @freeze_time("2018-02-02 12:00:01")
-class TestProjectSettingsForm(TestCase):
+class TestProjectSettingsForm(TestCase, WagtailTestUtils):
     def setUp(self):
         self.test_page, source = create_test_page(
             title="Test page",
@@ -79,6 +80,20 @@ class TestProjectSettingsForm(TestCase):
         self.assertEqual(
             self.form._get_default_project_description(self.test_page),
             self.test_page.full_url,
+        )
+
+    def test_default_project_description_has_the_user_name_when_passed(self):
+        user = self.create_test_user()
+        self.assertIn(
+            "test@email.com",
+            self.form._get_default_project_description(self.test_page, user=user),
+        )
+        user.first_name = "John"
+        user.last_name = "Doe"
+        user.save()
+        self.assertIn(
+            "John Doe",
+            self.form._get_default_project_description(self.test_page, user=user),
         )
 
     def test_get_default_project_template(self):

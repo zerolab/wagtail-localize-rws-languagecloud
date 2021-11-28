@@ -8,6 +8,7 @@ from django.utils.translation import gettext as _
 from requests import RequestException
 from wagtail.admin.forms import WagtailAdminModelForm
 from wagtail.admin.models import get_object_usage
+from wagtail.admin.templatetags.wagtailadmin_tags import user_display_name
 from wagtail.core.models import Page
 
 from wagtail_localize.models import TranslationSource
@@ -45,7 +46,7 @@ class LanguageCloudProjectSettingsForm(WagtailAdminModelForm):
             source_object_instance
         )
         self.fields["description"].initial = self._get_default_project_description(
-            source_object_instance
+            source_object_instance, user=user
         )
         self.fields["due_date"].initial = self._get_default_due_date()
 
@@ -82,8 +83,10 @@ class LanguageCloudProjectSettingsForm(WagtailAdminModelForm):
         )
         return now + delta
 
-    def _get_default_project_description(self, source_object):
+    def _get_default_project_description(self, source_object, user=None):
         description = ""
+        if user is not None:
+            description = user_display_name(user) + "\n"
 
         if source_object is None:
             return description
