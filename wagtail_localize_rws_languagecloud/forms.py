@@ -12,7 +12,7 @@ from wagtail.admin.templatetags.wagtailadmin_tags import user_display_name
 from wagtail.core.models import Page
 
 from wagtail_localize.models import TranslationSource
-from wagtail_localize_rws_languagecloud.rws_client import ApiClient
+from wagtail_localize_rws_languagecloud.rws_client import ApiClient, NotAuthenticated
 
 
 logger = logging.getLogger(__name__)
@@ -116,7 +116,7 @@ class LanguageCloudProjectSettingsForm(WagtailAdminModelForm):
         try:
             client.authenticate()
             templates = client.get_project_templates(should_sleep=False)
-        except RequestException:
+        except (RequestException, NotAuthenticated):
             templates = {}
         return templates
 
