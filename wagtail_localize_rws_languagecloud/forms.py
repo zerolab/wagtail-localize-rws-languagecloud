@@ -48,6 +48,7 @@ class LanguageCloudProjectSettingsForm(WagtailAdminModelForm):
         self.fields["description"].initial = self._get_default_project_description(
             source_object_instance, user=user
         )
+        self.fields["description"].widget = forms.Textarea(attrs={"rows": 3})
         self.fields["due_date"].initial = self._get_default_due_date()
 
         self.fields["template_id"] = forms.ChoiceField(
