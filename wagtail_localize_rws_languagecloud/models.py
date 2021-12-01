@@ -6,7 +6,12 @@ from wagtail_localize.models import Translation, TranslationSource
 class StatusModel(models.Model):
     STATUS_NEW = "new"
     STATUS_IMPORTED = "imported"
-    STATUS_CHOICES = [(STATUS_NEW, STATUS_NEW), (STATUS_IMPORTED, STATUS_IMPORTED)]
+    STATUS_ERROR = "error"
+    STATUS_CHOICES = [
+        (STATUS_NEW, STATUS_NEW),
+        (STATUS_IMPORTED, STATUS_IMPORTED),
+        (STATUS_ERROR, STATUS_ERROR),
+    ]
     internal_status = models.CharField(
         blank=False,
         max_length=255,
@@ -34,6 +39,7 @@ class LanguageCloudProject(StatusModel):
         unique_together = [
             ("translation_source", "source_last_updated_at"),
         ]
+        ordering = ["-source_last_updated_at"]
 
     @property
     def all_files_imported(self):
@@ -71,6 +77,7 @@ class LanguageCloudFile(StatusModel):
         unique_together = [
             ("translation", "project"),
         ]
+        ordering = ["-project__source_last_updated_at"]
 
     @property
     def is_created(self):

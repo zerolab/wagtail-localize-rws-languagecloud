@@ -254,11 +254,22 @@ def _import(client, logger):
 
                 logger.info("Importing translations from target file")
                 importer = Importer(db_source_file, logger)
+
                 try:
                     importer.import_po(db_source_file.translation, target_file)
                 except SuspiciousOperation as e:
-                    logger.error(str(e))
+                    logger.exception(e)
+                    db_source_file.internal_status = LanguageCloudFile.STATUS_ERROR
+                    db_source_file.save()
                     continue
+                except (KeyboardInterrupt, SystemExit):
+                    raise
+                except Exception as e:  # noqa
+                    logger.exception(e)
+                    db_source_file.internal_status = LanguageCloudFile.STATUS_ERROR
+                    db_source_file.save()
+                    continue
+
                 logger.info(
                     f"Successfully imported translations for {db_source_file.translation.uuid}"
                 )
