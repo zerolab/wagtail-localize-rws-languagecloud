@@ -54,9 +54,13 @@ class LanguageCloudProjectSettingsForm(WagtailAdminModelForm):
         self.fields["template_id"] = forms.ChoiceField(
             label=_("Template"),
             choices=self._get_project_template_choices(),
-            initial=self._get_default_project_template_id(),
+            initial=self.default_project_template_id,
             widget=forms.Select(),
         )
+
+    @property
+    def default_project_template_id(self):
+        return settings.WAGTAILLOCALIZE_RWS_LANGUAGECLOUD.get("TEMPLATE_ID")
 
     def clean_due_date(self):
         due_date = self.cleaned_data["due_date"]
@@ -108,9 +112,6 @@ class LanguageCloudProjectSettingsForm(WagtailAdminModelForm):
 
         return description
 
-    def _get_default_project_template_id(self):
-        return settings.WAGTAILLOCALIZE_RWS_LANGUAGECLOUD.get("TEMPLATE_ID")
-
     def _get_project_templates(self):
         client = ApiClient(logger)
         try:
@@ -128,4 +129,4 @@ class LanguageCloudProjectSettingsForm(WagtailAdminModelForm):
                 for template in project_templates["items"]
             ]
 
-        return [(self._get_default_project_template_id(), _("Default template"))]
+        return [(self.default_project_template_id, _("Default template"))]

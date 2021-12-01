@@ -13,20 +13,10 @@ from wagtail.tests.utils import WagtailTestUtils
 
 from wagtail_localize_rws_languagecloud.forms import LanguageCloudProjectSettingsForm
 from wagtail_localize_rws_languagecloud.models import LanguageCloudProjectSettings
-from wagtail_localize_rws_languagecloud.rws_client import ApiClient
 
 from .helpers import create_test_page
 
 
-mockApiClient = ApiClient
-mockApiClient.is_authorized = True
-mockApiClient.authenticate = mock.Mock()
-mockApiClient.get_project_templates = mock.Mock(
-    return_value={"items": [{"id": "123456", "name": "Project X"}], "itemCount": 1}
-)
-
-
-@mock.patch("wagtail_localize_rws_languagecloud.forms.ApiClient", new=mockApiClient)
 @override_settings(WAGTAILLOCALIZE_RWS_LANGUAGECLOUD={"TEMPLATE_ID": "c0ffee"})
 @freeze_time("2018-02-02 12:00:01")
 class TestProjectSettingsForm(TestCase, WagtailTestUtils):
@@ -41,10 +31,24 @@ class TestProjectSettingsForm(TestCase, WagtailTestUtils):
             LanguageCloudProjectSettings,
             LanguageCloudProjectSettingsForm,
         )
-        self.form = self.form_class(source_object_instance=self.test_page)
+        self.form = self._get_form(source_object_instance=self.test_page)
 
         self.logger = logging.getLogger(__name__)
         logging.disable()  # supress log output under test
+
+    @mock.patch(
+        "wagtail_localize_rws_languagecloud.forms.LanguageCloudProjectSettingsForm._get_project_templates",
+        new=mock.MagicMock(
+            return_value={
+                "items": [{"id": "123456", "name": "Project X"}],
+                "itemCount": 1,
+            }
+        ),
+    )
+    def _get_form(self, data=None, source_object_instance=None):
+        if data:
+            return self.form_class(data, source_object_instance=source_object_instance)
+        return self.form_class(source_object_instance=source_object_instance)
 
     def test_get_project_name_without_custom_prefix(self):
         self.assertEqual(
@@ -97,7 +101,7 @@ class TestProjectSettingsForm(TestCase, WagtailTestUtils):
         )
 
     def test_get_default_project_template(self):
-        self.assertEqual(self.form._get_default_project_template_id(), "c0ffee")
+        self.assertEqual(self.form.default_project_template_id, "c0ffee")
 
     def test_user_field_is_hidden(self):
         self.assertIsInstance(self.form.fields["user"].widget, forms.HiddenInput)
@@ -114,7 +118,7 @@ class TestProjectSettingsForm(TestCase, WagtailTestUtils):
             "template_id": "123456",
             "due_date": datetime.datetime(2018, 2, 1, 12, 0, 1, tzinfo=pytz.utc),
         }
-        form = self.form_class(data)
+        form = self._get_form(data=data)
         self.assertFalse(form.is_valid())
         self.assertIn("due_date", form.errors)
         self.assertIn("Due date cannot be in the past.", form.errors["due_date"])
