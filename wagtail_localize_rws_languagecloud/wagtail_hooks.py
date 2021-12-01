@@ -1,6 +1,10 @@
-from django.urls import include, path
+from django.urls import include, path, reverse
+from django.utils.translation import gettext as _
 from django.views.i18n import JavaScriptCatalog
+from wagtail.admin.menu import MenuItem
 from wagtail.core import hooks
+
+from wagtail_localize_rws_languagecloud import views
 
 
 @hooks.register("register_admin_urls")
@@ -11,8 +15,11 @@ def register_admin_urls():
             JavaScriptCatalog.as_view(packages=["wagtail_localize_rws_languagecloud"]),
             name="javascript_catalog",
         ),
-        # Add your other URLs here, and they will appear under `/admin/localize_rws_languagecloud/`
-        # Note: you do not need to check for authentication in views added here, Wagtail does this for you!
+        path(
+            "reports/languagecloud/",
+            views.LanguageCloudReportView.as_view(),
+            name="languagecloud_report",
+        ),
     ]
 
     return [
@@ -24,3 +31,18 @@ def register_admin_urls():
             ),
         )
     ]
+
+
+class LanguageCloudReportMenuItem(MenuItem):
+    def is_shown(self, request):
+        return True
+
+
+@hooks.register("register_reports_menu_item")
+def register_languagecloud_report_menu_item():
+    return LanguageCloudReportMenuItem(
+        _("LanguageCloud"),
+        reverse("wagtail_localize_rws_languagecloud:languagecloud_report"),
+        icon_name="site",
+        order=9001,
+    )

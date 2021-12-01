@@ -1,0 +1,50 @@
+{% extends 'wagtailadmin/reports/base_report.html' %}
+{% load i18n wagtailadmin_tags %}
+
+{% block results %}
+  {% if object_list %}
+    <table class="listing">
+      <thead>
+        <tr>
+          <th>{% trans 'Submitted date' %}</th>
+          <th>{% trans 'User' %}</th>
+          <th>{% trans 'Source title' %}</th>
+          <th>{% trans 'Locale' %}</th>
+          <th>{% trans 'LanguageCloud ID' %}</th>
+          <th>{% trans 'LanguageCloud Status' %}</th>
+          <th>{% trans 'Wagtail Status' %}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for file in object_list %}
+        <tr>
+          <td>{{ file.project.source_last_updated_at }}</td>
+          <td>TODO</td>
+          <td>
+            {% if file.project.translation_source_object.full_url %}
+              <a href="{{ file.project.translation_source_object.full_url }}">
+                {{ file.project.translation_source_object }}
+              </a>
+            {% else %}
+              {{ file.project.translation_source_object }}
+            {% endif %}
+          </td>
+          <td>{{ file.translation.target_locale }}</td>
+
+          <td>
+            {% if file.project.lc_project_id %}
+              <a href="{{ file.project.languagecloud_frontend_url }}">{{ file.project.lc_project_id }}</a>
+            {% else %}
+              &nbsp;
+            {% endif %}
+          </td>
+          <td>{{ file.project.lc_project_status }}</td>
+          <td>{{ file.combined_status }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>{% trans "No projects found." %}</p>
+  {% endif %}
+{% endblock %}
