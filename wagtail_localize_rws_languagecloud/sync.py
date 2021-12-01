@@ -96,6 +96,7 @@ def _create_remote_project(lc_project, client, name, due_by, description):
     try:
         create_project_resp = client.create_project(name, due_by, description)
         lc_project.lc_project_id = create_project_resp["id"]
+        lc_project.lc_project_status = "created"
         lc_project.create_attempts = lc_project.create_attempts + 1
         lc_project.save()
         return create_project_resp["id"]
@@ -217,6 +218,8 @@ def _import(client, logger):
                     f"Failed to fetch status for project {db_project.lc_project_id}"
                 )
                 continue
+            db_project.lc_project_status = api_project["status"]
+            db_project.save()
 
             if api_project["status"] != "completed":
                 logger.info(
