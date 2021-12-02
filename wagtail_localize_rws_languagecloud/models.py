@@ -1,4 +1,6 @@
 from django.db import models
+from django.utils.translation import gettext_lazy
+from wagtail.core.models import Page
 
 from wagtail_localize.models import Translation, TranslationSource
 
@@ -6,7 +8,12 @@ from wagtail_localize.models import Translation, TranslationSource
 class StatusModel(models.Model):
     STATUS_NEW = "new"
     STATUS_IMPORTED = "imported"
-    STATUS_CHOICES = [(STATUS_NEW, STATUS_NEW), (STATUS_IMPORTED, STATUS_IMPORTED)]
+    STATUS_ERROR = "error"
+    STATUS_CHOICES = [
+        (STATUS_NEW, STATUS_NEW),
+        (STATUS_IMPORTED, STATUS_IMPORTED),
+        (STATUS_ERROR, STATUS_ERROR),
+    ]
     internal_status = models.CharField(
         blank=False,
         max_length=255,
@@ -34,6 +41,7 @@ class LanguageCloudProject(StatusModel):
         unique_together = [
             ("translation_source", "source_last_updated_at"),
         ]
+        ordering = ["-source_last_updated_at"]
 
     @property
     def all_files_imported(self):
@@ -60,6 +68,16 @@ class LanguageCloudProject(StatusModel):
             True in [f.is_failed for f in self.languagecloudfile_set.all()]
         )
 
+    @property
+    def translation_source_object(self):
+        return self.translation_source.get_source_instance()
+
+    @property
+    def languagecloud_frontend_url(self):
+        if self.lc_project_id == "":
+            return None
+        return f"https://languagecloud.sdl.com/en/cp/detail?jobId={self.lc_project_id}"
+
 
 class LanguageCloudFile(StatusModel):
     translation = models.ForeignKey(Translation, on_delete=models.CASCADE)
@@ -71,6 +89,7 @@ class LanguageCloudFile(StatusModel):
         unique_together = [
             ("translation", "project"),
         ]
+        ordering = ["-project__source_last_updated_at"]
 
     @property
     def is_created(self):
@@ -79,3 +98,47 @@ class LanguageCloudFile(StatusModel):
     @property
     def is_failed(self):
         return self.lc_source_file_id == "" and self.create_attempts >= 3
+
+    @property
+    def instance_is_published(self):
+        instance = self.translation.get_target_instance()
+        if not isinstance(instance, Page):
+            return True
+        return not instance.has_unpublished_changes
+
+    @property
+    def combined_status(self):
+        if self.project.lc_project_id == "" and self.project.create_attempts >= 3:
+            return gettext_lazy("Project creation failed")
+
+        if not self.translation.enabled:
+            return gettext_lazy("Translations disabled in Wagtail")
+
+        if self.is_failed:
+            return gettext_lazy("PO File upload failed")
+
+        if not self.project.is_created:
+            return gettext_lazy("Request created")
+
+        if self.project.lc_project_status == "archived":
+            return gettext_lazy("LanguageCloud project archived")
+
+        if (
+            self.internal_status == LanguageCloudFile.STATUS_IMPORTED
+            and not self.instance_is_published
+        ):
+            return gettext_lazy("Translations ready for review")
+
+        if (
+            self.internal_status == LanguageCloudFile.STATUS_IMPORTED
+            and self.instance_is_published
+        ):
+            return gettext_lazy("Translations published")
+
+        if self.internal_status == LanguageCloudFile.STATUS_ERROR:
+            return gettext_lazy("Error importing PO file")
+
+        if self.project.is_created:
+            return gettext_lazy("Translations happening in LanguageCloud")
+
+        return gettext_lazy("Unknown")

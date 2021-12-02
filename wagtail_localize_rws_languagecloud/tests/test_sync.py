@@ -3,43 +3,18 @@ import logging
 
 from unittest.mock import Mock
 
-import polib
-
 from django.test import TestCase, override_settings
 from freezegun import freeze_time
 from requests.exceptions import RequestException
-from wagtail.core.models import Locale, Page
+from wagtail.core.models import Locale
 
 import wagtail_localize_rws_languagecloud.sync as sync
 
-from wagtail_localize.models import Translation, TranslationSource
-from wagtail_localize.test.models import TestPage
+from wagtail_localize.models import Translation
 
 from ..models import LanguageCloudFile, LanguageCloudProject
 from ..rws_client import ApiClient
-
-
-def create_test_page(**kwargs):
-    parent = kwargs.pop("parent", None) or Page.objects.get(slug="home")
-    page = parent.add_child(instance=TestPage(**kwargs))
-    revision = page.save_revision()
-    revision.publish()
-    source, created = TranslationSource.get_or_create_from_instance(page)
-    return page, source
-
-
-def create_test_po(entries):
-    po = polib.POFile(wrapwidth=200)
-    po.metadata = {
-        "POT-Creation-Date": str(datetime.datetime.utcnow()),
-        "MIME-Version": "1.0",
-        "Content-Type": "text/html; charset=utf-8",
-    }
-
-    for entry in entries:
-        po.append(polib.POEntry(msgctxt=entry[0], msgid=entry[1], msgstr=entry[2]))
-
-    return po
+from .helpers import create_test_page, create_test_po
 
 
 class TestImport(TestCase):
@@ -108,6 +83,7 @@ class TestImport(TestCase):
         for file_ in self.lc_files:
             file_.refresh_from_db()
             self.assertEqual(file_.internal_status, LanguageCloudFile.STATUS_IMPORTED)
+            self.assertEqual(file_.combined_status, "Translations ready for review")
 
     def test_import_all_get_project_calls_fail(self):
         client = ApiClient()
@@ -125,6 +101,9 @@ class TestImport(TestCase):
         for file_ in self.lc_files:
             file_.refresh_from_db()
             self.assertEqual(file_.internal_status, LanguageCloudFile.STATUS_NEW)
+            self.assertEqual(
+                file_.combined_status, "Translations happening in LanguageCloud"
+            )
 
     def test_import_some_get_project_calls_fail(self):
         client = ApiClient()
@@ -142,15 +121,23 @@ class TestImport(TestCase):
             proj.refresh_from_db()
         for file_ in self.lc_files:
             file_.refresh_from_db()
+
         self.assertEqual(
             self.lc_projects[0].internal_status, LanguageCloudProject.STATUS_NEW
         )
         self.assertEqual(self.lc_files[0].internal_status, LanguageCloudFile.STATUS_NEW)
         self.assertEqual(
+            self.lc_files[0].combined_status, "Translations happening in LanguageCloud"
+        )
+
+        self.assertEqual(
             self.lc_projects[1].internal_status, LanguageCloudProject.STATUS_IMPORTED
         )
         self.assertEqual(
             self.lc_files[1].internal_status, LanguageCloudFile.STATUS_IMPORTED
+        )
+        self.assertEqual(
+            self.lc_files[1].combined_status, "Translations ready for review"
         )
 
     def test_import_no_records_to_process(self):
@@ -193,6 +180,15 @@ class TestImport(TestCase):
         self.lc_projects[1].refresh_from_db()
         self.assertEqual(
             self.lc_projects[1].internal_status, LanguageCloudProject.STATUS_NEW
+        )
+
+        for file_ in self.lc_files:
+            file_.refresh_from_db()
+        self.assertEqual(
+            self.lc_files[0].combined_status, "Translations ready for review"
+        )
+        self.assertEqual(
+            self.lc_files[1].combined_status, "Translations happening in LanguageCloud"
         )
 
 
@@ -258,8 +254,14 @@ class TestExport(TestCase):
         )
         self.assertEqual(proj1_files[0].lc_source_file_id, "file1")
         self.assertEqual(proj1_files[0].create_attempts, 1)
+        self.assertEqual(
+            proj1_files[0].combined_status, "Translations happening in LanguageCloud"
+        )
         self.assertEqual(proj1_files[1].lc_source_file_id, "file2")
         self.assertEqual(proj1_files[1].create_attempts, 1)
+        self.assertEqual(
+            proj1_files[1].combined_status, "Translations happening in LanguageCloud"
+        )
 
         self.assertEqual(lc_projects[1].lc_project_id, "proj2")
         self.assertEqual(lc_projects[1].create_attempts, 1)
@@ -268,8 +270,14 @@ class TestExport(TestCase):
         )
         self.assertEqual(proj2_files[0].lc_source_file_id, "file3")
         self.assertEqual(proj2_files[0].create_attempts, 1)
+        self.assertEqual(
+            proj2_files[0].combined_status, "Translations happening in LanguageCloud"
+        )
         self.assertEqual(proj2_files[1].lc_source_file_id, "file4")
         self.assertEqual(proj2_files[1].create_attempts, 1)
+        self.assertEqual(
+            proj2_files[1].combined_status, "Translations happening in LanguageCloud"
+        )
 
     def test_export_all_create_project_api_calls_fail(self):
         client = ApiClient()
@@ -293,6 +301,7 @@ class TestExport(TestCase):
         for file_ in lc_files:
             self.assertEqual(file_.lc_source_file_id, "")
             self.assertEqual(file_.create_attempts, 0)
+            self.assertEqual(file_.combined_status, "Request created")
 
     def test_export_some_create_project_api_calls_fail(self):
         client = ApiClient()
@@ -326,8 +335,10 @@ class TestExport(TestCase):
         )
         self.assertEqual(proj1_files[0].lc_source_file_id, "")
         self.assertEqual(proj1_files[0].create_attempts, 0)
+        self.assertEqual(proj1_files[0].combined_status, "Request created")
         self.assertEqual(proj1_files[1].lc_source_file_id, "")
         self.assertEqual(proj1_files[1].create_attempts, 0)
+        self.assertEqual(proj1_files[1].combined_status, "Request created")
 
         self.assertEqual(lc_projects[1].lc_project_id, "proj2")
         self.assertEqual(lc_projects[1].create_attempts, 1)
@@ -336,8 +347,14 @@ class TestExport(TestCase):
         )
         self.assertEqual(proj2_files[0].lc_source_file_id, "file3")
         self.assertEqual(proj2_files[0].create_attempts, 1)
+        self.assertEqual(
+            proj2_files[0].combined_status, "Translations happening in LanguageCloud"
+        )
         self.assertEqual(proj2_files[1].lc_source_file_id, "file4")
         self.assertEqual(proj2_files[1].create_attempts, 1)
+        self.assertEqual(
+            proj2_files[1].combined_status, "Translations happening in LanguageCloud"
+        )
 
     def test_export_some_create_file_api_calls_fail(self):
         client = ApiClient()
@@ -372,8 +389,10 @@ class TestExport(TestCase):
         )
         self.assertEqual(proj1_files[0].lc_source_file_id, "")
         self.assertEqual(proj1_files[0].create_attempts, 1)
+        self.assertEqual(proj1_files[0].combined_status, "Request created")
         self.assertEqual(proj1_files[1].lc_source_file_id, "file2")
         self.assertEqual(proj1_files[1].create_attempts, 1)
+        self.assertEqual(proj1_files[1].combined_status, "Request created")
 
         self.assertEqual(lc_projects[1].lc_project_id, "proj2")
         self.assertEqual(lc_projects[1].create_attempts, 1)
@@ -382,8 +401,10 @@ class TestExport(TestCase):
         )
         self.assertEqual(proj2_files[0].lc_source_file_id, "")
         self.assertEqual(proj2_files[0].create_attempts, 1)
+        self.assertEqual(proj2_files[0].combined_status, "Request created")
         self.assertEqual(proj2_files[1].lc_source_file_id, "file3")
         self.assertEqual(proj2_files[1].create_attempts, 1)
+        self.assertEqual(proj2_files[1].combined_status, "Request created")
 
     def test_export_no_records_to_process(self):
         LanguageCloudProject.objects.create(

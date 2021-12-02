@@ -96,6 +96,7 @@ def _create_remote_project(lc_project, client, name, due_by, description):
     try:
         create_project_resp = client.create_project(name, due_by, description)
         lc_project.lc_project_id = create_project_resp["id"]
+        lc_project.lc_project_status = "created"
         lc_project.create_attempts = lc_project.create_attempts + 1
         lc_project.save()
         return create_project_resp["id"]
@@ -217,6 +218,8 @@ def _import(client, logger):
                     f"Failed to fetch status for project {db_project.lc_project_id}"
                 )
                 continue
+            db_project.lc_project_status = api_project["status"]
+            db_project.save()
 
             if api_project["status"] != "completed":
                 logger.info(
@@ -251,11 +254,22 @@ def _import(client, logger):
 
                 logger.info("Importing translations from target file")
                 importer = Importer(db_source_file, logger)
+
                 try:
                     importer.import_po(db_source_file.translation, target_file)
                 except SuspiciousOperation as e:
-                    logger.error(str(e))
+                    logger.exception(e)
+                    db_source_file.internal_status = LanguageCloudFile.STATUS_ERROR
+                    db_source_file.save()
                     continue
+                except (KeyboardInterrupt, SystemExit):
+                    raise
+                except Exception as e:  # noqa
+                    logger.exception(e)
+                    db_source_file.internal_status = LanguageCloudFile.STATUS_ERROR
+                    db_source_file.save()
+                    continue
+
                 logger.info(
                     f"Successfully imported translations for {db_source_file.translation.uuid}"
                 )
