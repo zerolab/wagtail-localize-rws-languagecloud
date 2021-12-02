@@ -31,7 +31,7 @@
           <td>
               <div class="human-readable-date" title="{{ file.project.source_last_updated_at|date:"DATETIME_FORMAT" }}">{% blocktrans with time_period=file.project.source_last_updated_at|timesince %}{{ time_period }} ago{% endblocktrans %}</div>
           </td>
-          <td>TODO</td>
+          <td>{% include "wagtailadmin/shared/user_avatar.html" with user=file.project.lc_settings.user username=file.project.lc_settings.user_display_name %}</td>
           <td>
             {% if file.project.lc_project_id %}
               <a href="{{ file.project.languagecloud_frontend_url }}">{{ file.project.lc_project_id }}</a>
