@@ -42,14 +42,20 @@ class LanguageCloudProjectSettingsForm(WagtailAdminModelForm):
         self.fields["user"].initial = user
         self.fields["user"].widget = forms.HiddenInput()
 
-        self.fields["name"].initial = self._get_default_project_name(
-            source_object_instance
+        self.fields["name"].label = _("Name prefix")
+        self.fields["name"].help_text = _(
+            "The project name will be a combination of the "
+            "supplied prefix and the source title. e.g. '%(name)s'"
+            % {
+                "name": f"{self.default_project_name_prefix}{self._get_source_name(source_object_instance)}"
+            }
         )
+        self.fields["name"].initial = self.default_project_name_prefix
         self.fields["description"].initial = self._get_default_project_description(
             source_object_instance, user=user
         )
         self.fields["description"].widget = forms.Textarea(attrs={"rows": 3})
-        self.fields["due_date"].initial = self._get_default_due_date()
+        self.fields["due_date"].initial = self.default_due_date
 
         self.fields["template_id"] = forms.ChoiceField(
             label=_("Template"),
@@ -62,6 +68,19 @@ class LanguageCloudProjectSettingsForm(WagtailAdminModelForm):
     def default_project_template_id(self):
         return settings.WAGTAILLOCALIZE_RWS_LANGUAGECLOUD.get("TEMPLATE_ID")
 
+    @property
+    def default_project_name_prefix(self):
+        prefix = settings.WAGTAILLOCALIZE_RWS_LANGUAGECLOUD.get("PROJECT_PREFIX", "")
+        return f"{prefix}{timezone.now():%Y-%m-%d}_"
+
+    @property
+    def default_due_date(self):
+        now = timezone.now()
+        delta = settings.WAGTAILLOCALIZE_RWS_LANGUAGECLOUD.get(
+            "DUE_BY_DELTA", datetime.timedelta(days=7)
+        )
+        return now + delta
+
     def clean_due_date(self):
         due_date = self.cleaned_data["due_date"]
         if due_date.timestamp() < datetime.datetime.utcnow().timestamp():
@@ -71,22 +90,12 @@ class LanguageCloudProjectSettingsForm(WagtailAdminModelForm):
 
         return due_date
 
-    def _get_default_project_name(self, source_object):
+    def _get_source_name(self, source_object):
         if isinstance(source_object, TranslationSource):
-            object_name = str(source_object.get_source_instance())
+            source_name = str(source_object.get_source_instance())
         else:
-            object_name = str(source_object)
-
-        prefix = settings.WAGTAILLOCALIZE_RWS_LANGUAGECLOUD.get("PROJECT_PREFIX", "")
-        now = timezone.now()
-        return f"{prefix}{object_name}_{now:%Y-%m-%d}"
-
-    def _get_default_due_date(self):
-        now = timezone.now()
-        delta = settings.WAGTAILLOCALIZE_RWS_LANGUAGECLOUD.get(
-            "DUE_BY_DELTA", datetime.timedelta(days=7)
-        )
-        return now + delta
+            source_name = str(source_object)
+        return source_name
 
     def _get_default_project_description(self, source_object, user=None):
         description = ""

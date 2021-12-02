@@ -52,8 +52,8 @@ class TestProjectSettingsForm(TestCase, WagtailTestUtils):
 
     def test_get_project_name_without_custom_prefix(self):
         self.assertEqual(
-            self.form._get_default_project_name(self.test_page),
-            "Test page_2018-02-02",
+            self.form.default_project_name_prefix,
+            "2018-02-02_",
         )
 
     @override_settings(
@@ -61,13 +61,13 @@ class TestProjectSettingsForm(TestCase, WagtailTestUtils):
     )
     def test_get_project_name_with_custom_prefix(self):
         self.assertEqual(
-            self.form._get_default_project_name(self.test_page),
-            "Website_Test page_2018-02-02",
+            self.form.default_project_name_prefix,
+            "Website_2018-02-02_",
         )
 
     def test_get_project_due_date_without_custom_delta(self):
         self.assertEqual(
-            self.form._get_default_due_date(),
+            self.form.default_due_date,
             datetime.datetime(2018, 2, 9, 12, 0, 1, tzinfo=pytz.utc),
         )
 
@@ -76,7 +76,7 @@ class TestProjectSettingsForm(TestCase, WagtailTestUtils):
     )
     def test_get_project_due_date_with_custom_delta(self):
         self.assertEqual(
-            self.form._get_default_due_date(),
+            self.form.default_due_date,
             datetime.datetime(2018, 2, 16, 12, 0, 1, tzinfo=pytz.utc),
         )
 

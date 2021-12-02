@@ -195,14 +195,22 @@ class LanguageCloudProjectSettings(models.Model):
             ("translation_source", "source_last_updated_at"),
         ]
 
+    def __str__(self):
+        return f"LanguageCloudProjectSettings ({self.pk}): {self.name}"
+
     @classmethod
     def get_or_create_from_source_and_translation_data(
         cls, translation_source, translations, **kwargs
     ):
+        name_prefix = kwargs.get("name", "")
+        glue = "" if name_prefix.endswith("_") else "_"
+        kwargs["name"] = (
+            name_prefix + glue + str(translation_source.get_source_instance())
+        )
         project_settings, created = LanguageCloudProjectSettings.objects.get_or_create(
             translation_source=translation_source,
             source_last_updated_at=translation_source.last_updated_at,
-            **kwargs
+            **kwargs,
         )
 
         if created:
