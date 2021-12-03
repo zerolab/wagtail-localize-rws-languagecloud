@@ -143,7 +143,7 @@ class TestImport(TestCase):
     def test_import_no_records_to_process(self):
         self.lc_projects[0].internal_status = LanguageCloudProject.STATUS_IMPORTED
         self.lc_projects[0].save()
-        self.lc_projects[1].internal_status = LanguageCloudProject.STATUS_IMPORTED
+        self.lc_projects[1].lc_project_status = "archived"
         self.lc_projects[1].save()
 
         client = ApiClient()
