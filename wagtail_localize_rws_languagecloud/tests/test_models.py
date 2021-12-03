@@ -1,3 +1,4 @@
+import datetime
 import logging
 
 from django.test import TestCase
@@ -6,7 +7,11 @@ from wagtail.core.models import Locale
 from wagtail_localize.models import Translation
 
 from ..importer import Importer
-from ..models import LanguageCloudFile, LanguageCloudProject
+from ..models import (
+    LanguageCloudFile,
+    LanguageCloudProject,
+    LanguageCloudProjectSettings,
+)
 from .helpers import create_test_page, create_test_po
 
 
@@ -114,3 +119,42 @@ class TestLanguageCloudFileCombinedStatus(TestCase):
         self.assertEqual(
             self.file.combined_status, "Translations happening in LanguageCloud"
         )
+
+
+class TestLanguageCloudProjectSettings(TestCase):
+    def setUp(self):
+        self.locale_fr = Locale.objects.create(language_code="fr")
+        self.page, self.source = create_test_page(
+            title="Test page",
+            slug="test-page",
+            test_charfield="Some test translatable content",
+        )
+
+        self.translation = Translation.objects.create(
+            source=self.source, target_locale=self.locale_fr
+        )
+        self.translation.save_target()
+
+    def test_settings_creation_includes_source_title(self):
+        settings_data = {"name": "the prefix", "due_date": datetime.datetime.now()}
+        (
+            settings,
+            _,
+        ) = LanguageCloudProjectSettings.get_or_create_from_source_and_translation_data(
+            self.source, [self.translation], **settings_data
+        )
+
+        self.assertEqual(settings.name, f"the prefix_{str(self.page)}")
+
+    def test_settings_creation_doesnt_add_double_underscore_if_prefix_ends_with_it(
+        self,
+    ):
+        settings_data = {"name": "prefix_", "due_date": datetime.datetime.now()}
+        (
+            settings,
+            _,
+        ) = LanguageCloudProjectSettings.get_or_create_from_source_and_translation_data(
+            self.source, [self.translation], **settings_data
+        )
+
+        self.assertEqual(settings.name, f"prefix_{str(self.page)}")

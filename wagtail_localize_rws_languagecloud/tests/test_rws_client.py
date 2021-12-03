@@ -109,7 +109,13 @@ class TestApiClient(TestCase):
     def test_create_project_not_authenticated(self):
         client = ApiClient()
         with self.assertRaises(NotAuthenticated):
-            client.create_project("faketitle", "2020-01-01T00:00:01.000Z", "fakedesc")
+            client.create_project(
+                "faketitle",
+                "2020-01-01T00:00:01.000Z",
+                "fakedesc",
+                "faketemplate",
+                "fakelocation",
+            )
 
     @override_settings(
         WAGTAILLOCALIZE_RWS_LANGUAGECLOUD={
@@ -132,7 +138,11 @@ class TestApiClient(TestCase):
         client.headers = {}
 
         resp = client.create_project(
-            "faketitle", "2020-01-01T00:00:01.000Z", "fakedesc"
+            "faketitle",
+            "2020-01-01T00:00:01.000Z",
+            "fakedesc",
+            "faketemplate",
+            "fakelocation",
         )
         self.assertEqual(len(responses.calls), 1)
         self.assertDictEqual(
@@ -168,7 +178,13 @@ class TestApiClient(TestCase):
         client.headers = {}
 
         with self.assertRaises(RequestException):
-            client.create_project("faketitle", "2020-01-01T00:00:01.000Z", "fakedesc")
+            client.create_project(
+                "faketitle",
+                "2020-01-01T00:00:01.000Z",
+                "fakedesc",
+                "faketemplate",
+                "fakelocation",
+            )
         self.assertEqual(len(responses.calls), 1)
 
     def test_create_source_file_not_authenticated(self):
@@ -397,3 +413,39 @@ class TestApiClient(TestCase):
         with self.assertRaises(RequestException):
             client.download_target_file("fakeproject", "faketargetfile")
         self.assertEqual(len(responses.calls), 2)
+
+    @responses.activate
+    def test_get_project_templates_success(self):
+        responses.add(
+            responses.GET,
+            "https://lc-api.sdl.com/public-api/v1/project-templates",
+            json={"items": [{"id": "123456", "name": "Project X"}]},
+            status=200,
+        )
+        client = ApiClient()
+
+        # fake the auth step
+        client.is_authenticated = True
+        client.headers = {}
+
+        resp = client.get_project_templates()
+        self.assertEqual(len(responses.calls), 1)
+        self.assertEqual(resp, {"items": [{"id": "123456", "name": "Project X"}]})
+
+    @responses.activate
+    def test_get_project_templates_fail(self):
+        responses.add(
+            responses.GET,
+            "https://lc-api.sdl.com/public-api/v1/projects-templates",
+            json={"errorCode": "BAD REQUEST", "message": "nope", "details": []},
+            status=400,
+        )
+        client = ApiClient()
+
+        # fake the auth step
+        client.is_authenticated = True
+        client.headers = {}
+
+        with self.assertRaises(RequestException):
+            client.get_project_templates()
+        self.assertEqual(len(responses.calls), 1)

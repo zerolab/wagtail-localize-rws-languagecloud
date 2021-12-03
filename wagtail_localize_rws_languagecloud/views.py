@@ -58,6 +58,8 @@ class LanguageCloudReportView(ReportView):
             .select_related("project")
             .select_related("project__translation_source")
             .select_related("project__translation_source__object")
+            .select_related("project__lc_settings")
+            .select_related("project__lc_settings__user")
             .select_related("translation")
             .select_related("translation__source")
         )

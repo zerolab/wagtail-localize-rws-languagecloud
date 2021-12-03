@@ -1,8 +1,11 @@
+from django.conf import settings
 from django.db import models
 from django.utils.translation import gettext_lazy
 from wagtail.core.models import Page
 
+from wagtail_localize.components import register_translation_component
 from wagtail_localize.models import Translation, TranslationSource
+from wagtail_localize_rws_languagecloud.forms import LanguageCloudProjectSettingsForm
 
 
 class StatusModel(models.Model):
@@ -142,3 +145,79 @@ class LanguageCloudFile(StatusModel):
             return gettext_lazy("Translations happening in LanguageCloud")
 
         return gettext_lazy("Unknown")
+
+
+@register_translation_component(
+    heading=gettext_lazy("Send translation to RWS Language Cloud"),
+    help_text=gettext_lazy(
+        "You can modify RWS Language Cloud default project details such name, due date or project option"
+    ),
+    enable_text=gettext_lazy("Send to RWS Cloud"),
+    disable_text=gettext_lazy("Do not send to RWS Cloud"),
+)
+class LanguageCloudProjectSettings(models.Model):
+    base_form_class = LanguageCloudProjectSettingsForm
+
+    translation_source = models.ForeignKey(
+        TranslationSource, on_delete=models.CASCADE, editable=False
+    )
+    source_last_updated_at = models.DateTimeField(editable=False)
+    translations = models.ManyToManyField(Translation, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.DO_NOTHING,
+        db_constraint=False,
+        related_name="+",
+    )
+
+    # will be set on cron
+    lc_project = models.OneToOneField(
+        LanguageCloudProject,
+        blank=True,
+        null=True,
+        on_delete=models.CASCADE,
+        editable=False,
+        related_name="lc_settings",
+    )
+
+    # the editable fields
+    name = models.CharField(max_length=255)
+    description = models.CharField(max_length=255, blank=True)
+    due_date = models.DateTimeField()
+    template_id = models.CharField(
+        max_length=255, verbose_name=gettext_lazy("Project template")
+    )
+
+    class Meta:
+        unique_together = [
+            ("translation_source", "source_last_updated_at"),
+        ]
+
+    def __str__(self):
+        return f"LanguageCloudProjectSettings ({self.pk}): {self.name}"
+
+    @classmethod
+    def get_or_create_from_source_and_translation_data(
+        cls, translation_source, translations, **kwargs
+    ):
+        name_prefix = kwargs.get("name", "")
+        glue = "" if name_prefix.endswith("_") else "_"
+        kwargs["name"] = (
+            name_prefix + glue + str(translation_source.get_source_instance())
+        )
+        project_settings, created = LanguageCloudProjectSettings.objects.get_or_create(
+            translation_source=translation_source,
+            source_last_updated_at=translation_source.last_updated_at,
+            **kwargs,
+        )
+
+        if created:
+            project_settings.translations.add(*translations)
+
+        return project_settings, created
+
+    @property
+    def formatted_due_date(self):
+        return self.due_date.strftime("%Y-%m-%dT%H:%M:%S.000Z")
