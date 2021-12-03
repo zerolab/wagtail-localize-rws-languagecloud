@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.utils.translation import gettext_lazy
 from wagtail.admin.mail import send_mail
 
 
@@ -17,10 +18,13 @@ def send_emails(translation):
 
 
 def compose_email(translation):
-    subject = "Translated content ready for review"
-    body = "Translated content for '{}' is ready for review at: {}".format(
-        str(translation.get_target_instance()),
-        get_full_url(translation.get_target_instance_edit_url()),
+    subject = gettext_lazy("Translated content ready for review")
+    body = gettext_lazy(
+        "Translated content for '%(instance)s' is ready for review at: %(edit_url)s"
+        % {
+            "instance": str(translation.get_target_instance()),
+            "edit_url": get_full_url(translation.get_target_instance_edit_url()),
+        }
     )
     return subject, body
 
