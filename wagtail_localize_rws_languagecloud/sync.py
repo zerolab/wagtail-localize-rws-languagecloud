@@ -201,6 +201,7 @@ def _import(client, logger):
     lc_projects = (
         LanguageCloudProject.objects.all()
         .exclude(internal_status=LanguageCloudProject.STATUS_IMPORTED)
+        .exclude(lc_project_status="archived")
         .exclude(lc_project_id="")
         .order_by("id")
     )
