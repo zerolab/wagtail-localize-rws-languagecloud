@@ -9,6 +9,7 @@ from wagtail.core.models import Locale
 
 from wagtail_localize.models import Translation
 
+from .emails import send_emails
 from .importer import Importer
 from .models import (
     LanguageCloudFile,
@@ -272,6 +273,10 @@ def _import(client, logger):
 
                 try:
                     importer.import_po(db_source_file.translation, target_file)
+                    if settings.WAGTAILLOCALIZE_RWS_LANGUAGECLOUD.get(
+                        "SEND_EMAILS", False
+                    ):
+                        send_emails(db_source_file.translation)
                 except SuspiciousOperation as e:
                     logger.exception(e)
                     db_source_file.internal_status = LanguageCloudFile.STATUS_ERROR

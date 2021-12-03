@@ -32,18 +32,32 @@ This allows users of [RWS LanguageCloud](https://www.rws.com/translation/languag
        "CLIENT_ID": "<client id>",
        "CLIENT_SECRET": "<client secret>",
        "ACCOUNT_ID": "<account id>",
+
        # (required) Identifier of a LanguageCloud template to create projects from
        "TEMPLATE_ID": "<template id>",
+
        # (required) Identifier of a LanguageCloud location to store project files in
        "LOCATION_ID": "<location id>",
+
        # (optional) Prefix for project names. Defaults to '' if not specified
        "PROJECT_PREFIX": "foobar_",
+
        # (optional) A timedelta object used to set the project 'due by' date.
        # Defaults to datetime.timedelta(days=7) if not specified
        "DUE_BY_DELTA": datetime.timedelta(days=30),
+
        # (optional) Number of a seconds to sleep between each API request.
        # Defaults to 0 if not specified
        "API_SLEEP_SECONDS": 5,
+
+       # (optional) Send an email to uers with any of the following permissions:
+       # - wagtail_localize.add_translation
+       # - wagtail_localize.change_translation
+       # - wagtail_localize.delete_translation
+       # - wagtail_localize.submit_translation
+       # when new translations are ready for review.
+       # Defaults to False if not specified
+       "SEND_EMAILS": True,
    }
    ```
 

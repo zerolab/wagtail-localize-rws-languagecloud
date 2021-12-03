@@ -165,6 +165,8 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "test-media")
 
 # Wagtail settings
 
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
 WAGTAIL_SITE_NAME = "Wagtail Localize RWS LanguageCloud test site"
 
 WAGTAIL_I18N_ENABLED = True
