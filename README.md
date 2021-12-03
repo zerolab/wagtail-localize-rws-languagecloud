@@ -4,9 +4,9 @@ This allows users of [RWS LanguageCloud](https://www.rws.com/translation/languag
 
 ## Requirements
 
-- python >= 3.7
-- django >= 2.2
-- wagtail >= 2.11
+- Python >= 3.7
+- Django >= 3.0
+- Wagtail >= 2.12
 - wagtail-localize >= 1.0.1
 
 ## Setup

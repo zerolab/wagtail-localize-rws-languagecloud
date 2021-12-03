@@ -41,8 +41,8 @@ setup(
         "Framework :: Wagtail :: 2",
     ],
     install_requires=[
-        "Django>=2.2,<3.3",
-        "Wagtail>=2.11,<2.16",
+        "Django>=3.0,<3.3",
+        "Wagtail>=2.12,<2.16",
         "wagtail-localize>=1.0.1",
     ],
     extras_require={
