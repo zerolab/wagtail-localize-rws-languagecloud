@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+-
+
+## [0.3] - 2021-12-06
+
 ### Added
 
 - Ability to change the default project settings.
@@ -14,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   only created when an editor chooses to send a translation to RWS.
   To create missing settings from your existing projects run `./manage.py create_missing_rws_project_settings`.
 - LanguageCloud translation report
+- Email notifications when translations are ready for review.
 
 ### Fixed
 
