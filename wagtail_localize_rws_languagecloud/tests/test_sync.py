@@ -305,14 +305,14 @@ class TestExport(TestCase):
         client.get_project_templates = self.get_project_templates_mock
         sync._export(client, self.logger)
 
-        self.assertEqual(client.create_project.call_count, 4)
+        self.assertEqual(client.create_project.call_count, 2)
         self.assertEqual(client.create_source_file.call_count, 0)
 
         lc_projects = LanguageCloudProject.objects.all()
         self.assertEqual(len(lc_projects), 2)
         for proj in lc_projects:
             self.assertEqual(proj.lc_project_id, "")
-            self.assertEqual(proj.create_attempts, 2)
+            self.assertEqual(proj.create_attempts, 1)
 
         lc_files = LanguageCloudFile.objects.all()
         self.assertEqual(len(lc_files), 4)
@@ -327,7 +327,6 @@ class TestExport(TestCase):
         client.create_project = Mock(
             side_effect=[
                 RequestException("oh no"),
-                RequestException("oh no"),
                 {"id": "proj2"},
             ],
             spec=True,
@@ -338,7 +337,7 @@ class TestExport(TestCase):
         client.get_project_templates = self.get_project_templates_mock
 
         sync._export(client, self.logger)
-        self.assertEqual(client.create_project.call_count, 3)
+        self.assertEqual(client.create_project.call_count, 2)
         self.assertEqual(client.create_source_file.call_count, 2)
         lc_projects = [
             LanguageCloudProject.objects.all().get(
@@ -349,7 +348,7 @@ class TestExport(TestCase):
         ]
 
         self.assertEqual(lc_projects[0].lc_project_id, "")
-        self.assertEqual(lc_projects[0].create_attempts, 2)
+        self.assertEqual(lc_projects[0].create_attempts, 1)
         proj1_files = (
             lc_projects[0].languagecloudfile_set.all().order_by("lc_source_file_id")
         )
@@ -464,7 +463,7 @@ class TestExport(TestCase):
             spec=True,
         )
         sync._export(client, self.logger)
-        self.assertEqual(client.create_project.call_count, 3)
+        self.assertEqual(client.create_project.call_count, 2)
         self.assertEqual(client.create_source_file.call_count, 2)
 
         lc_projects = [
@@ -709,3 +708,120 @@ class TestHelpers(TestCase):
             create_attempts=2,
         )
         self.assertTrue(sync._should_export(self.logger, lc_project))
+
+
+class TestProjectsToExportLogic(TestCase):
+    def setUp(self):
+        self.locale_en = Locale.objects.get(language_code="en")
+        self.locale_fr = Locale.objects.create(language_code="fr")
+        self.locale_de = Locale.objects.create(language_code="de")
+
+        _, self.source = create_test_page(
+            title="Test page",
+            slug="test-page",
+            test_charfield="Some test translatable content",
+        )
+        self.translation_fr = Translation.objects.create(
+            source=self.source,
+            target_locale=self.locale_fr,
+        )
+
+        self.translation_de = Translation.objects.create(
+            source=self.source,
+            target_locale=self.locale_de,
+        )
+
+        self.logger = logging.getLogger(__name__)
+        logging.disable()  # supress log output under test
+
+    def _add_settings(self):
+        settings, _ = create_test_project_settings(
+            self.source, [self.translation_fr, self.translation_de]
+        )
+        return settings
+
+    def _add_project_from_settings(self):
+        return sync._create_local_project(self._add_settings())
+
+    def test_project_without_settings_will_not_considered(self):
+        LanguageCloudProject.objects.get_or_create(
+            translation_source=self.source,
+            source_last_updated_at=self.source.last_updated_at,
+        )
+        self.assertEqual(sync._get_projects_to_export().count(), 0)
+
+    def test_project_with_settings_but_no_files_will_not_be_considered(self):
+        self._add_settings()
+        self.assertEqual(sync._get_projects_to_export().count(), 0)
+
+    def test_project_with_settings_and_files_will_be_considered(self):
+        self._add_project_from_settings()
+
+        self.assertEqual(sync._get_projects_to_export().count(), 1)
+
+    def test_project_already_imported_will_not_be_considered(self):
+        project = self._add_project_from_settings()
+        project.internal_status = LanguageCloudProject.STATUS_IMPORTED
+        project.save()
+
+        self.assertEqual(sync._get_projects_to_export().count(), 0)
+
+    def test_archived_project_is_excluded(self):
+        project = self._add_project_from_settings()
+        project.lc_project_status = "archived"
+        project.save()
+
+        self.assertEqual(sync._get_projects_to_export().count(), 0)
+
+    def test_project_and_all_remote_files_created_will_not_be_considered(self):
+        project = self._add_project_from_settings()
+        project.lc_project_id = "123"
+        project.save()
+
+        for lc_file in project.languagecloudfile_set.all():
+            lc_file.lc_source_file_id = f"foo_{lc_file.id}"
+            lc_file.save()
+
+        self.assertEqual(sync._get_projects_to_export().count(), 0)
+
+    def test_project_created_remotely_but_not_the_files_be_considered(self):
+        project = self._add_project_from_settings()
+        project.lc_project_id = "123"
+        project.save()
+
+        self.assertEqual(sync._get_projects_to_export().count(), 1)
+
+    def test_project_with_some_remote_files_created_will_be_considered(self):
+        project = self._add_project_from_settings()
+        lc_file = project.languagecloudfile_set.first()
+        lc_file.lc_source_file_id = "123"
+        lc_file.save()
+
+        self.assertEqual(sync._get_projects_to_export().count(), 1)
+
+    def test_failed_project_will_not_be_considered(self):
+        project = self._add_project_from_settings()
+        project.create_attempts = 3
+        project.save()
+
+        self.assertEqual(sync._get_projects_to_export().count(), 0)
+
+    def test_project_with_all_remote_files_failed_will_not_be_considered(self):
+        project = self._add_project_from_settings()
+        project.save()
+
+        for lc_file in project.languagecloudfile_set.all():
+            lc_file.create_attempts = 3
+            lc_file.save()
+
+        self.assertEqual(sync._get_projects_to_export().count(), 0)
+
+    def test_project_with_some_remote_files_failed_will_not_be_considered(self):
+        project = self._add_project_from_settings()
+        project.save()
+
+        lc_file = project.languagecloudfile_set.first()
+        lc_file.create_attempts = 3
+        lc_file.save()
+
+        self.assertEqual(sync._get_projects_to_export().count(), 0)
