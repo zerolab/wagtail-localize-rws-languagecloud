@@ -251,10 +251,14 @@ class TestExport(TestCase):
             spec=True,
         )
         client.get_project_templates = self.get_project_templates_mock
+        client.start_project = Mock()
+
         sync._export(client, self.logger)
 
         self.assertEqual(client.create_project.call_count, 2)
         self.assertEqual(client.create_source_file.call_count, 4)
+        self.assertEqual(client.start_project.call_count, 2)
+
         lc_projects = [
             LanguageCloudProject.objects.all().get(
                 translation_source=s,
@@ -335,10 +339,13 @@ class TestExport(TestCase):
             side_effect=[{"id": "file3"}, {"id": "file4"}], spec=True
         )
         client.get_project_templates = self.get_project_templates_mock
+        client.start_project = Mock()
 
         sync._export(client, self.logger)
         self.assertEqual(client.create_project.call_count, 2)
         self.assertEqual(client.create_source_file.call_count, 2)
+        self.assertEqual(client.start_project.call_count, 1)
+
         lc_projects = [
             LanguageCloudProject.objects.all().get(
                 translation_source=s,
@@ -391,10 +398,14 @@ class TestExport(TestCase):
             spec=True,
         )
         client.get_project_templates = self.get_project_templates_mock
+        client.start_project = Mock()
+
         sync._export(client, self.logger)
 
         self.assertEqual(client.create_project.call_count, 2)
         self.assertEqual(client.create_source_file.call_count, 4)
+        self.assertEqual(client.start_project.call_count, 0)
+
         lc_projects = [
             LanguageCloudProject.objects.all().get(
                 translation_source=s,
@@ -447,9 +458,12 @@ class TestExport(TestCase):
         client.create_source_file = Mock(
             side_effect=[{"id": "def123"}, {"id": "def456"}], spec=True
         )
+        client.start_project = Mock()
+
         sync._export(client, self.logger)
         self.assertEqual(client.create_project.call_count, 0)
         self.assertEqual(client.create_source_file.call_count, 0)
+        self.assertEqual(client.start_project.call_count, 0)
 
     def test_export_with_an_exception_finished_processing(self):
         client = ApiClient()
@@ -462,9 +476,11 @@ class TestExport(TestCase):
             side_effect=[{"id": "file1"}, {"id": "file2"}, {"id": "file3"}],
             spec=True,
         )
+        client.start_project = Mock()
         sync._export(client, self.logger)
         self.assertEqual(client.create_project.call_count, 2)
         self.assertEqual(client.create_source_file.call_count, 2)
+        self.assertEqual(client.start_project.call_count, 1)
 
         lc_projects = [
             LanguageCloudProject.objects.all().get(
@@ -507,11 +523,14 @@ class TestExport(TestCase):
             spec=True,
         )
         client.get_project_templates = self.get_project_templates_mock
+        client.start_project = Mock()
+
         sync._export(client, self.logger)
 
         self.assertEqual(LanguageCloudProject.objects.count(), 2)
         self.assertEqual(client.create_project.call_count, 2)
         self.assertEqual(client.create_source_file.call_count, 4)
+        self.assertEqual(client.start_project.call_count, 2)
 
 
 class TestHelpers(TestCase):
