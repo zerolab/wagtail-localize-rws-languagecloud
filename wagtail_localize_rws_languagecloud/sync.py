@@ -38,31 +38,6 @@ def _get_project_templates_and_locations(client: ApiClient):
     return cached_templates_and_locations
 
 
-def _should_export(logger, lc_project):
-    if lc_project.internal_status == LanguageCloudProject.STATUS_IMPORTED:
-        logger.info(
-            "Already imported translations for "
-            f"{lc_project.translation_source.object_repr}. Skipping.."
-        )
-        return False
-
-    if lc_project.is_created:
-        logger.info(
-            f"Already created project {lc_project.lc_project_id} and "
-            f"all source files. Skipping.."
-        )
-        return False
-
-    if lc_project.is_failed:
-        logger.info(
-            "Too many failed attempts for "
-            f"{lc_project.translation_source.object_repr}. Skipping.."
-        )
-        return False
-
-    return True
-
-
 @transaction.atomic
 def _create_local_project(project_settings: LanguageCloudProjectSettings):
     lc_project, _ = LanguageCloudProject.objects.get_or_create(
