@@ -32,7 +32,7 @@ class LanguageCloudStatus(models.TextChoices):
     CREATED = "created", gettext_lazy("Created")
     IN_PROGRESS = "inProgress", gettext_lazy("In Progress")
     COMPLETED = "completed", gettext_lazy("Completed")
-    ARCHIVED = "archived", gettext_lazy("Arhived")
+    ARCHIVED = "archived", gettext_lazy("Archived")
 
 
 class LanguageCloudProject(StatusModel):
@@ -69,13 +69,6 @@ class LanguageCloudProject(StatusModel):
             self.lc_project_id != ""
             and len(children_created) > 0
             and False not in children_created
-        )
-
-    @property
-    def is_failed(self):
-        # True if project OR any source file failed >= 3 times
-        return (self.lc_project_id == "" and self.create_attempts >= 3) or (
-            True in [f.is_failed for f in self.languagecloudfile_set.all()]
         )
 
     @property

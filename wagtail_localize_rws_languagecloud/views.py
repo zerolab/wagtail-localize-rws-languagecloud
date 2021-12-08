@@ -6,7 +6,7 @@ from wagtail.admin.filters import WagtailFilterSet
 from wagtail.admin.views.reports import ReportView
 from wagtail.core.models import Locale
 
-from .models import LanguageCloudFile
+from .models import LanguageCloudFile, LanguageCloudStatus
 
 
 class SourceTitleFilter(django_filters.CharFilter):
@@ -33,12 +33,7 @@ class LanguageCloudReportFilterSet(WagtailFilterSet):
     )
     project__lc_project_status = django_filters.ChoiceFilter(
         label=gettext_lazy("LanguageCloud project status"),
-        choices=[
-            ("created", gettext_lazy("Created")),
-            ("inProgress", gettext_lazy("In Progress")),
-            ("completed", gettext_lazy("Completed")),
-            ("archived", gettext_lazy("Archived")),
-        ],
+        choices=LanguageCloudStatus.choices,
     )
     translation__target_locale = django_filters.ModelChoiceFilter(
         label=gettext_lazy("Locale"),
