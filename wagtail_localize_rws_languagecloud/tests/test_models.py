@@ -11,6 +11,7 @@ from ..models import (
     LanguageCloudFile,
     LanguageCloudProject,
     LanguageCloudProjectSettings,
+    LanguageCloudStatus,
 )
 from .helpers import create_test_page, create_test_po
 
@@ -60,7 +61,7 @@ class TestLanguageCloudFileCombinedStatus(TestCase):
     def test_project_archived(self):
         self.project.lc_project_id = "12345"
         self.file.lc_source_file_id = "67890"
-        self.project.lc_project_status = "archived"
+        self.project.lc_project_status = LanguageCloudStatus.ARCHIVED
         self.project.save()
         self.file.save()
         self.assertEqual(self.file.combined_status, "LanguageCloud project archived")
