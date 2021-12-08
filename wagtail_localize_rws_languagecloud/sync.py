@@ -114,9 +114,13 @@ def _get_projects_to_export():
         )
         .filter(lc_settings__isnull=False)  # ensure they are tied to project settings
         .exclude(internal_status=LanguageCloudProject.STATUS_IMPORTED)  # imported
-        .exclude(
-            lc_project_status=LanguageCloudStatus.ARCHIVED
-        )  # archived in LanguageCloud
+        .exclude(  # in progress, completed or archived in LanguageCloud
+            lc_project_status__in=[
+                LanguageCloudStatus.IN_PROGRESS,
+                LanguageCloudStatus.COMPLETED,
+                LanguageCloudStatus.ARCHIVED,
+            ]
+        )
         .exclude(  # created: project and all files created in LanguageCloud
             ~Q(lc_project_id=""),  # the project was created in LanguageCloud
             files__gt=0,  # and has at least one file for translation
