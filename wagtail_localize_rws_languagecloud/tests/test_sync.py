@@ -10,7 +10,7 @@ import wagtail_localize_rws_languagecloud.sync as sync
 
 from wagtail_localize.models import Translation
 
-from ..models import LanguageCloudFile, LanguageCloudProject
+from ..models import LanguageCloudFile, LanguageCloudProject, LanguageCloudStatus
 from ..rws_client import ApiClient
 from .helpers import create_test_page, create_test_po, create_test_project_settings
 
@@ -147,7 +147,7 @@ class TestImport(TestCase):
     def test_import_no_records_to_process(self):
         self.lc_projects[0].internal_status = LanguageCloudProject.STATUS_IMPORTED
         self.lc_projects[0].save()
-        self.lc_projects[1].lc_project_status = "archived"
+        self.lc_projects[1].lc_project_status = LanguageCloudStatus.ARCHIVED
         self.lc_projects[1].save()
 
         client = ApiClient()
@@ -722,7 +722,7 @@ class TestProjectsToExportLogic(TestCase):
 
     def test_archived_project_is_excluded(self):
         project = self._add_project_from_settings()
-        project.lc_project_status = "archived"
+        project.lc_project_status = LanguageCloudStatus.ARCHIVED
         project.save()
 
         self.assertEqual(sync._get_projects_to_export().count(), 0)

@@ -28,6 +28,13 @@ class StatusModel(models.Model):
         abstract = True
 
 
+class LanguageCloudStatus(models.TextChoices):
+    CREATED = "created", gettext_lazy("Created")
+    IN_PROGRESS = "inProgress", gettext_lazy("In Progress")
+    COMPLETED = "completed", gettext_lazy("Completed")
+    ARCHIVED = "archived", gettext_lazy("Arhived")
+
+
 class LanguageCloudProject(StatusModel):
     translation_source = models.ForeignKey(TranslationSource, on_delete=models.CASCADE)
     source_last_updated_at = models.DateTimeField()
@@ -81,6 +88,10 @@ class LanguageCloudProject(StatusModel):
             return None
         return f"https://languagecloud.sdl.com/en/cp/detail?jobId={self.lc_project_id}"
 
+    @property
+    def lc_project_status_label(self):
+        return LanguageCloudStatus(self.lc_project_status).label
+
 
 class LanguageCloudFile(StatusModel):
     translation = models.ForeignKey(Translation, on_delete=models.CASCADE)
@@ -123,7 +134,7 @@ class LanguageCloudFile(StatusModel):
         if not self.project.is_created:
             return gettext_lazy("Request created")
 
-        if self.project.lc_project_status == "archived":
+        if self.project.lc_project_status == LanguageCloudStatus.ARCHIVED:
             return gettext_lazy("LanguageCloud project archived")
 
         if (

@@ -13,6 +13,7 @@ from .models import (
     LanguageCloudFile,
     LanguageCloudProject,
     LanguageCloudProjectSettings,
+    LanguageCloudStatus,
 )
 from .rws_client import ApiClient, NotFound
 
@@ -70,7 +71,7 @@ def _create_remote_project(lc_project, project_templates_and_locations, client):
             name, due_by, description, template_id, location_id
         )
         lc_project.lc_project_id = create_project_resp["id"]
-        lc_project.lc_project_status = "created"
+        lc_project.lc_project_status = LanguageCloudStatus.CREATED
         lc_project.create_attempts = lc_project.create_attempts + 1
         lc_project.save()
         return create_project_resp["id"]
@@ -113,7 +114,9 @@ def _get_projects_to_export():
         )
         .filter(lc_settings__isnull=False)  # ensure they are tied to project settings
         .exclude(internal_status=LanguageCloudProject.STATUS_IMPORTED)  # imported
-        .exclude(lc_project_status="archived")  # archived in LanguageCloud
+        .exclude(
+            lc_project_status=LanguageCloudStatus.ARCHIVED
+        )  # archived in LanguageCloud
         .exclude(  # created: project and all files created in LanguageCloud
             ~Q(lc_project_id=""),  # the project was created in LanguageCloud
             files__gt=0,  # and has at least one file for translation
@@ -217,7 +220,7 @@ def _import(client, logger):
     lc_projects = (
         LanguageCloudProject.objects.all()
         .exclude(internal_status=LanguageCloudProject.STATUS_IMPORTED)
-        .exclude(lc_project_status="archived")
+        .exclude(lc_project_status=LanguageCloudStatus.ARCHIVED)
         .exclude(lc_project_id="")
         .order_by("id")
     )
@@ -238,7 +241,7 @@ def _import(client, logger):
             db_project.lc_project_status = api_project["status"]
             db_project.save()
 
-            if api_project["status"] not in ("inProgress", "completed"):
+            if api_project["status"] not in (LanguageCloudStatus.IN_PROGRESS, LanguageCloudStatus.COMPLETED):
                 logger.info(
                     f"LanguageCloud Project Status: \"{api_project['status']}\". Skipping.."
                 )
