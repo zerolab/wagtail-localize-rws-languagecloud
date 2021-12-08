@@ -742,6 +742,20 @@ class TestProjectsToExportLogic(TestCase):
 
         self.assertEqual(sync._get_projects_to_export().count(), 0)
 
+    def test_project_in_progress_is_excluded(self):
+        project = self._add_project_from_settings()
+        project.lc_project_status = LanguageCloudStatus.IN_PROGRESS
+        project.save()
+
+        self.assertEqual(sync._get_projects_to_export().count(), 0)
+
+    def test_completed_project_is_excluded(self):
+        project = self._add_project_from_settings()
+        project.lc_project_status = LanguageCloudStatus.COMPLETED
+        project.save()
+
+        self.assertEqual(sync._get_projects_to_export().count(), 0)
+
     def test_archived_project_is_excluded(self):
         project = self._add_project_from_settings()
         project.lc_project_status = LanguageCloudStatus.ARCHIVED
