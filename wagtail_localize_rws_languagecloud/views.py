@@ -24,6 +24,12 @@ class LanguageCloudProjectIDFilter(django_filters.CharFilter):
 
 
 class LanguageCloudReportFilterSet(WagtailFilterSet):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.filters[
+            "translation__target_locale"
+        ].queryset = Locale.objects.all().exclude(id=Locale.get_default().id)
+
     project__source_last_updated_at = django_filters.DateRangeFilter(
         label=gettext_lazy("Source last updated at")
     )
@@ -37,7 +43,7 @@ class LanguageCloudReportFilterSet(WagtailFilterSet):
     )
     translation__target_locale = django_filters.ModelChoiceFilter(
         label=gettext_lazy("Locale"),
-        queryset=Locale.objects.all().exclude(id=Locale.get_default().id),
+        queryset=Locale.objects.none(),
     )
 
 
