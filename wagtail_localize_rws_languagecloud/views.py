@@ -24,6 +24,19 @@ class LanguageCloudProjectIDFilter(django_filters.CharFilter):
 
 
 class LanguageCloudReportFilterSet(WagtailFilterSet):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        """
+        We need to lazy load the queryset for this filter because our system checks
+        load urls.py but run before migrations are applied.
+        If we don't do this we will throw
+        django.db.utils.OperationalError: no such table: wagtailcore_locale
+        trying to apply migrations
+        """
+        self.filters[
+            "translation__target_locale"
+        ].queryset = Locale.objects.all().exclude(id=Locale.get_default().id)
+
     project__source_last_updated_at = django_filters.DateRangeFilter(
         label=gettext_lazy("Source last updated at")
     )
@@ -42,7 +55,7 @@ class LanguageCloudReportFilterSet(WagtailFilterSet):
     )
     translation__target_locale = django_filters.ModelChoiceFilter(
         label=gettext_lazy("Locale"),
-        queryset=Locale.objects.all().exclude(id=Locale.get_default().id),
+        queryset=Locale.objects.none(),
     )
 
 
