@@ -148,6 +148,24 @@ class ApiClient:
         sleep(self.api_sleep_seconds)
         return r.json()
 
+    def complete_project(self, project_id):
+        """
+        Set the status of a project to "complete"
+        https://languagecloud.sdl.com/lc/api-docs/rest-api/project/completeproject
+        """
+        self.logger.debug(f"complete_project {project_id}")
+        if not self.is_authenticated:
+            raise NotAuthenticated()
+
+        r = requests.put(
+            f"{self.api_base}/projects/{project_id}/complete",
+            headers=self.headers,
+            timeout=REQUEST_TIMEOUT,
+        )
+        self.logger.debug(r.text)
+        r.raise_for_status()
+        sleep(self.api_sleep_seconds)
+
     def download_target_file(self, project_id, source_file_id):
         """
         Retrieves a targer file for the project

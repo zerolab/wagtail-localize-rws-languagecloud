@@ -67,14 +67,16 @@ class TestImport(TestCase):
         client = ApiClient()
         client.is_authorized = True
         client.get_project = Mock(
-            side_effect=[{"status": "completed"}, {"status": "completed"}], spec=True
+            side_effect=[{"status": "completed"}, {"status": "inProgress"}], spec=True
         )
         client.download_target_file = Mock(
             side_effect=[str(self.po_files[0]), str(self.po_files[1])], spec=True
         )
+        client.complete_project = Mock(spec=True)
         sync._import(client, self.logger)
         self.assertEqual(client.get_project.call_count, 2)
         self.assertEqual(client.download_target_file.call_count, 2)
+        self.assertEqual(client.complete_project.call_count, 1)
         for proj in self.lc_projects:
             proj.refresh_from_db()
             self.assertEqual(proj.internal_status, LanguageCloudProject.STATUS_IMPORTED)
@@ -90,9 +92,11 @@ class TestImport(TestCase):
         client.download_target_file = Mock(
             side_effect=ValueError("this should never be called"), spec=True
         )
+        client.complete_project = Mock(spec=True)
         sync._import(client, self.logger)
         self.assertEqual(client.get_project.call_count, 2)
         self.assertEqual(client.download_target_file.call_count, 0)
+        self.assertEqual(client.complete_project.call_count, 0)
         for proj in self.lc_projects:
             proj.refresh_from_db()
             self.assertEqual(proj.internal_status, LanguageCloudProject.STATUS_NEW)
@@ -107,14 +111,16 @@ class TestImport(TestCase):
         client = ApiClient()
         client.is_authorized = True
         client.get_project = Mock(
-            side_effect=[RequestException("oh no"), {"status": "completed"}], spec=True
+            side_effect=[RequestException("oh no"), {"status": "inProgress"}], spec=True
         )
         client.download_target_file = Mock(
             side_effect=[str(self.po_files[0]), str(self.po_files[1])], spec=True
         )
+        client.complete_project = Mock(spec=True)
         sync._import(client, self.logger)
         self.assertEqual(client.get_project.call_count, 2)
         self.assertEqual(client.download_target_file.call_count, 1)
+        self.assertEqual(client.complete_project.call_count, 1)
         for proj in self.lc_projects:
             proj.refresh_from_db()
         for file_ in self.lc_files:
@@ -147,28 +153,33 @@ class TestImport(TestCase):
         client = ApiClient()
         client.is_authorized = True
         client.get_project = Mock(
-            side_effect=[{"status": "complete"}, {"status": "complete"}], spec=True
+            side_effect=[{"status": "doesn't matter"}, {"status": "doesn't matter"}],
+            spec=True,
         )
         client.download_target_file = Mock(
             side_effect=[self.po_files[0], self.po_files[1]], spec=True
         )
+        client.complete_project = Mock(spec=True)
         sync._import(client, self.logger)
         self.assertEqual(client.get_project.call_count, 0)
         self.assertEqual(client.download_target_file.call_count, 0)
+        self.assertEqual(client.complete_project.call_count, 0)
 
     def test_import_with_an_exception_finished_processing(self):
         client = ApiClient()
         client.is_authorized = True
         client.get_project = Mock(
-            side_effect=[{"status": "completed"}, Exception()], spec=True
+            side_effect=[{"status": "inProgress"}, Exception()], spec=True
         )
         client.download_target_file = Mock(
             side_effect=[str(self.po_files[0]), str(self.po_files[1])], spec=True
         )
+        client.complete_project = Mock(spec=True)
 
         sync._import(client, self.logger)
         self.assertEqual(client.get_project.call_count, 2)
         self.assertEqual(client.download_target_file.call_count, 1)
+        self.assertEqual(client.complete_project.call_count, 1)
 
         self.lc_projects[0].refresh_from_db()
         self.assertEqual(
