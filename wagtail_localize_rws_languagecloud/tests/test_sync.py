@@ -543,6 +543,39 @@ class TestExport(TestCase):
         self.assertEqual(client.create_source_file.call_count, 4)
         self.assertEqual(client.start_project.call_count, 2)
 
+    def test_export_will_mark_project_as_in_progress_if_started_remotely(self):
+        client = ApiClient()
+        client.create_project = Mock(
+            side_effect=[{"id": "proj1"}, {"id": "proj2"}], spec=True
+        )
+        client.create_source_file = Mock(
+            side_effect=[
+                {"id": "file1"},
+                {"id": "file2"},
+                {"id": "file3"},
+                {"id": "file4"},
+            ],
+            spec=True,
+        )
+        client.get_project_templates = self.get_project_templates_mock
+        client.start_project = Mock(
+            side_effect=[True, RequestException("oh no")], spec=True
+        )
+
+        sync._export(client, self.logger)
+        self.assertEqual(client.create_project.call_count, 2)
+        self.assertEqual(client.create_source_file.call_count, 4)
+        self.assertEqual(client.start_project.call_count, 2)
+
+        self.assertListEqual(
+            list(
+                LanguageCloudProject.objects.all()
+                .values_list("lc_project_status", flat=True)
+                .order_by("pk")
+            ),
+            [LanguageCloudStatus.IN_PROGRESS, LanguageCloudStatus.CREATED],
+        )
+
 
 class TestHelpers(TestCase):
     def setUp(self):
