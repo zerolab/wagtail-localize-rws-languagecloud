@@ -237,7 +237,7 @@ def _import(client, logger):
             db_project.lc_project_status = api_project["status"]
             db_project.save()
 
-            if api_project["status"] != "completed":
+            if api_project["status"] not in ("inProgress", "completed"):
                 logger.info(
                     f"LanguageCloud Project Status: \"{api_project['status']}\". Skipping.."
                 )
@@ -298,6 +298,11 @@ def _import(client, logger):
             if db_project.all_files_imported:
                 db_project.internal_status = LanguageCloudProject.STATUS_IMPORTED
                 db_project.save()
+                if api_project["status"] != "completed":
+                    try:
+                        client.complete_project(db_project.lc_project_id)
+                    except (RequestException):
+                        pass
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:  # noqa
