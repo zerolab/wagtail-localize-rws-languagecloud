@@ -110,7 +110,6 @@ class ApiClient:
         self.logger.debug(r.text)
         r.raise_for_status()
         sleep(self.api_sleep_seconds)
-        return r.json()
 
     def create_source_file(
         self, project_id, po_file, filename, source_locale, target_locale
