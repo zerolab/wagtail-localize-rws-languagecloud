@@ -132,9 +132,13 @@ def _get_projects_to_export():
         .exclude(
             files_exceeding_create_attempts__gt=0
         )  # failed: or any of the files had 3 failed attempts
+        .select_related(
+            "lc_settings",
+            "translation_source",
+            "translation_source__locale",
+        )
         .order_by("pk")
         .distinct()
-        # To-Do: select-relateds: translation_source, settings
     )
 
 
@@ -200,7 +204,9 @@ def _export(client, logger):
 
             source_instance = project.translation_source.get_source_instance()
             source_locale = project.translation_source.locale
-            lc_source_files = project.languagecloudfile_set.all()
+            lc_source_files = project.languagecloudfile_set.all().select_related(
+                "translation", "translation__target_locale"
+            )
             remote_files_created = 0
             for lc_source_file in lc_source_files:
                 translation = lc_source_file.translation
