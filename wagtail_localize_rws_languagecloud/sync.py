@@ -138,6 +138,39 @@ def _get_projects_to_export():
     )
 
 
+def _get_projects_to_start():
+    """
+    Returns `LanguageCloudProject`s that should be started. They have been created remotely
+    and all their files have been created remotely too
+    """
+    return (
+        LanguageCloudProject.objects.annotate(
+            files=Count("languagecloudfile"),
+            files_created=Count(
+                "languagecloudfile", filter=~Q(languagecloudfile__lc_source_file_id="")
+            ),
+        )
+        .exclude(  # in progress, completed or archived in LanguageCloud
+            lc_project_status__in=[
+                LanguageCloudStatus.IN_PROGRESS,
+                LanguageCloudStatus.COMPLETED,
+                LanguageCloudStatus.ARCHIVED,
+            ]
+        )
+        .filter(
+            lc_settings__isnull=False,  # ensure they are tied to project settings
+            internal_status=LanguageCloudProject.STATUS_NEW,
+        )
+        .filter(  # created: project and all files created in LanguageCloud
+            ~Q(lc_project_id=""),  # the project was created in LanguageCloud
+            files__gt=0,  # and has at least one file for translation
+            files_created=F("files"),  # and all files got created in LanguageCloud too
+        )
+        .order_by("pk")
+        .distinct()
+    )
+
+
 def _export(client, logger):
     logger.info("Creating LanguageCloud translation projects")
     unprocessed_project_settings = LanguageCloudProjectSettings.objects.filter(
@@ -219,6 +252,18 @@ def _export(client, logger):
         except Exception:  # noqa
             logger.exception(f"Failed to process project {project_id} ({project.pk})")
             continue
+
+        # now try to start any project that are ready to start, but somehow did not
+        # get started above
+        for project_to_start in _get_projects_to_start():
+            try:
+                client.start_project(project_to_start.lc_project_id)
+                project_to_start.lc_project_status = LanguageCloudStatus.IN_PROGRESS
+                project_to_start.save()
+            except RequestException:
+                logger.exception(
+                    f"Failed to start project {project_to_start.lc_project_id}"
+                )
 
 
 def _import(client, logger):
