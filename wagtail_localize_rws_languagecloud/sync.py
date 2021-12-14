@@ -208,7 +208,7 @@ def _export(client, logger):
 
             if remote_files_created == len(lc_source_files):
                 try:
-                    client.start_project()
+                    client.start_project(project_id)
                     project.lc_project_status = LanguageCloudStatus.IN_PROGRESS
                     project.save()
                 except RequestException:

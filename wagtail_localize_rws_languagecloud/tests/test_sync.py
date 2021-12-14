@@ -269,6 +269,8 @@ class TestExport(TestCase):
         self.assertEqual(client.create_project.call_count, 2)
         self.assertEqual(client.create_source_file.call_count, 4)
         self.assertEqual(client.start_project.call_count, 2)
+        # check start_project was called with the project id as a param
+        client.start_project.assert_called_with("proj2")
 
         lc_projects = [
             LanguageCloudProject.objects.all().get(
