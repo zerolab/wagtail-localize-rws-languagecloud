@@ -28,6 +28,13 @@ class StatusModel(models.Model):
         abstract = True
 
 
+class LanguageCloudStatus(models.TextChoices):
+    CREATED = "created", gettext_lazy("Created")
+    IN_PROGRESS = "inProgress", gettext_lazy("In Progress")
+    COMPLETED = "completed", gettext_lazy("Completed")
+    ARCHIVED = "archived", gettext_lazy("Archived")
+
+
 class LanguageCloudProject(StatusModel):
     translation_source = models.ForeignKey(TranslationSource, on_delete=models.CASCADE)
     source_last_updated_at = models.DateTimeField()
@@ -65,13 +72,6 @@ class LanguageCloudProject(StatusModel):
         )
 
     @property
-    def is_failed(self):
-        # True if project OR any source file failed >= 3 times
-        return (self.lc_project_id == "" and self.create_attempts >= 3) or (
-            True in [f.is_failed for f in self.languagecloudfile_set.all()]
-        )
-
-    @property
     def translation_source_object(self):
         return self.translation_source.get_source_instance()
 
@@ -80,6 +80,10 @@ class LanguageCloudProject(StatusModel):
         if self.lc_project_id == "":
             return None
         return f"https://languagecloud.sdl.com/en/cp/detail?jobId={self.lc_project_id}"
+
+    @property
+    def lc_project_status_label(self):
+        return LanguageCloudStatus(self.lc_project_status).label
 
 
 class LanguageCloudFile(StatusModel):
@@ -123,7 +127,7 @@ class LanguageCloudFile(StatusModel):
         if not self.project.is_created:
             return gettext_lazy("Request created")
 
-        if self.project.lc_project_status == "archived":
+        if self.project.lc_project_status == LanguageCloudStatus.ARCHIVED:
             return gettext_lazy("LanguageCloud project archived")
 
         if (

@@ -4,10 +4,8 @@ from django.conf import settings
 from django.core.cache import cache
 from django.core.exceptions import SuspiciousOperation
 from django.db import transaction
+from django.db.models import Count, F, Q
 from requests.exceptions import RequestException
-from wagtail.core.models import Locale
-
-from wagtail_localize.models import Translation
 
 from .emails import send_emails
 from .importer import Importer
@@ -15,6 +13,7 @@ from .models import (
     LanguageCloudFile,
     LanguageCloudProject,
     LanguageCloudProjectSettings,
+    LanguageCloudStatus,
 )
 from .rws_client import ApiClient, NotFound
 
@@ -38,31 +37,6 @@ def _get_project_templates_and_locations(client: ApiClient):
     cache.set(cache_key, cached_templates_and_locations, 60 * 5)
 
     return cached_templates_and_locations
-
-
-def _should_export(logger, lc_project):
-    if lc_project.internal_status == LanguageCloudProject.STATUS_IMPORTED:
-        logger.info(
-            "Already imported translations for "
-            f"{lc_project.translation_source.object_repr}. Skipping.."
-        )
-        return False
-
-    if lc_project.is_created:
-        logger.info(
-            f"Already created project {lc_project.lc_project_id} and "
-            f"all source files. Skipping.."
-        )
-        return False
-
-    if lc_project.is_failed:
-        logger.info(
-            "Too many failed attempts for "
-            f"{lc_project.translation_source.object_repr}. Skipping.."
-        )
-        return False
-
-    return True
 
 
 @transaction.atomic
@@ -92,13 +66,12 @@ def _create_remote_project(lc_project, project_templates_and_locations, client):
     location_id = project_templates_and_locations.get(
         template_id, settings.WAGTAILLOCALIZE_RWS_LANGUAGECLOUD["LOCATION_ID"]
     )
-
     try:
         create_project_resp = client.create_project(
             name, due_by, description, template_id, location_id
         )
         lc_project.lc_project_id = create_project_resp["id"]
-        lc_project.lc_project_status = "created"
+        lc_project.lc_project_status = LanguageCloudStatus.CREATED
         lc_project.create_attempts = lc_project.create_attempts + 1
         lc_project.save()
         return create_project_resp["id"]
@@ -125,53 +98,102 @@ def _create_remote_source_file(
         raise
 
 
+def _get_projects_to_export():
+    return (
+        LanguageCloudProject.objects.annotate(
+            files=Count("languagecloudfile"),
+            files_created=Count(
+                "languagecloudfile", filter=~Q(languagecloudfile__lc_source_file_id="")
+            ),
+            files_to_be_created=Count(
+                "languagecloudfile", filter=Q(languagecloudfile__lc_source_file_id="")
+            ),
+            files_exceeding_create_attempts=Count(
+                "languagecloudfile", filter=Q(languagecloudfile__create_attempts__gte=3)
+            ),
+        )
+        .filter(lc_settings__isnull=False)  # ensure they are tied to project settings
+        .exclude(internal_status=LanguageCloudProject.STATUS_IMPORTED)  # imported
+        .exclude(  # in progress, completed or archived in LanguageCloud
+            lc_project_status__in=[
+                LanguageCloudStatus.IN_PROGRESS,
+                LanguageCloudStatus.COMPLETED,
+                LanguageCloudStatus.ARCHIVED,
+            ]
+        )
+        .exclude(  # created: project and all files created in LanguageCloud
+            ~Q(lc_project_id=""),  # the project was created in LanguageCloud
+            files__gt=0,  # and has at least one file for translation
+            files_created=F("files"),  # and all files got created in LanguageCloud too
+        )
+        .exclude(
+            lc_project_id="", create_attempts__gte=3
+        )  # failed: project had 3 failed attempts
+        .exclude(
+            files_exceeding_create_attempts__gt=0
+        )  # failed: or any of the files had 3 failed attempts
+        .select_related(
+            "lc_settings",
+            "translation_source",
+            "translation_source__locale",
+        )
+        .order_by("pk")
+        .distinct()
+    )
+
+
+def _get_projects_to_start():
+    """
+    Returns `LanguageCloudProject`s that should be started. They have been created remotely
+    and all their files have been created remotely too
+    """
+    return (
+        LanguageCloudProject.objects.annotate(
+            files=Count("languagecloudfile"),
+            files_created=Count(
+                "languagecloudfile", filter=~Q(languagecloudfile__lc_source_file_id="")
+            ),
+        )
+        .exclude(  # in progress, completed or archived in LanguageCloud
+            lc_project_status__in=[
+                LanguageCloudStatus.IN_PROGRESS,
+                LanguageCloudStatus.COMPLETED,
+                LanguageCloudStatus.ARCHIVED,
+            ]
+        )
+        .filter(
+            lc_settings__isnull=False,  # ensure they are tied to project settings
+            internal_status=LanguageCloudProject.STATUS_NEW,
+        )
+        .filter(  # created: project and all files created in LanguageCloud
+            ~Q(lc_project_id=""),  # the project was created in LanguageCloud
+            files__gt=0,  # and has at least one file for translation
+            files_created=F("files"),  # and all files got created in LanguageCloud too
+        )
+        .order_by("pk")
+        .distinct()
+    )
+
+
 def _export(client, logger):
     logger.info("Creating LanguageCloud translation projects")
     unprocessed_project_settings = LanguageCloudProjectSettings.objects.filter(
         lc_project_id__isnull=True
-    )
+    ).order_by("pk")
     for project_settings in unprocessed_project_settings:
         _create_local_project(project_settings)
 
     logger.info("Exporting translations to LanguageCloud...")
-    source_locale = Locale.get_default()
-    target_locales = Locale.objects.exclude(id=source_locale.id)
-    translations = (
-        Translation.objects.filter(
-            source__locale=source_locale,
-            target_locale__in=target_locales,
-            enabled=True,
-            languagecloudprojectsettings__isnull=False,
-        )
-        .select_related("source", "target_locale")
-        .order_by("source__id", "target_locale__language_code", "id")
-    )
+
     project_templates_and_locations = _get_project_templates_and_locations(client)
-
-    for translation in translations:
+    for project in _get_projects_to_export():
+        project_id = project.lc_project_id
         try:
-            logger.info(
-                f"Processing Translation {translation.uuid}\n"
-                f"       {str(translation.source.object.get_instance(source_locale))}\n"
-                f"       {source_locale} --> {str(translation.target_locale)} "
-            )
-            try:
-                lc_project = LanguageCloudProject.objects.select_related(
-                    "lc_settings"
-                ).get(translation_source=translation.source, lc_settings__isnull=False)
-            except LanguageCloudProject.DoesNotExist:
-                continue
-
-            if not _should_export(logger, lc_project):
-                continue
-
-            project_id = lc_project.lc_project_id
-            name = lc_project.lc_settings.name
-
+            name = project.lc_settings.name
             if not project_id:
                 try:
                     project_id = _create_remote_project(
-                        lc_project, project_templates_and_locations, client
+                        project, project_templates_and_locations, client
                     )
                 except (RequestException, KeyError):
                     logger.error("Failed to create project")
@@ -180,35 +202,61 @@ def _export(client, logger):
             else:
                 logger.info(f"Already created project: {project_id}. Skipping..")
 
-            lc_source_file = LanguageCloudFile.objects.get(
-                translation=translation,
-                project=lc_project,
+            source_instance = project.translation_source.get_source_instance()
+            source_locale = project.translation_source.locale
+            lc_source_files = project.languagecloudfile_set.all().select_related(
+                "translation", "translation__target_locale"
             )
-            source_file_id = lc_source_file.lc_source_file_id
-            if not source_file_id:
-                try:
-                    source_file_id = _create_remote_source_file(
-                        lc_source_file,
-                        client,
-                        project_id,
-                        str(translation.source.export_po()),
-                        f"{name}_{str(translation.target_locale)}.po",
-                        source_locale.language_code,
-                        translation.target_locale.language_code,
+            for lc_source_file in lc_source_files:
+                translation = lc_source_file.translation
+                if not translation.enabled:
+                    logger.debug(
+                        f"Skipping inactive translation {translation.uuid} for source file {lc_source_file}"
                     )
-                except (RequestException, KeyError):
-                    logger.error("Failed to create source file")
                     continue
-                logger.info(f"Created source file: {source_file_id}")
-            else:
-                logger.info(
-                    f"Already created source file: {source_file_id}. Skipping.."
+
+                logger.info(  # todo update message
+                    f"Processing Translation {translation.uuid}\n"
+                    f"       {str(source_instance)}\n"
+                    f"       {source_locale} --> {str(translation.target_locale)} "
                 )
+                source_file_id = lc_source_file.lc_source_file_id
+                if not source_file_id:
+                    try:
+                        source_file_id = _create_remote_source_file(
+                            lc_source_file,
+                            client,
+                            project_id,
+                            str(project.translation_source.export_po()),
+                            f"{name}_{str(translation.target_locale)}.po",
+                            source_locale.language_code,
+                            translation.target_locale.language_code,
+                        )
+                    except (RequestException, KeyError):
+                        logger.error("Failed to create source file")
+                        continue
+                    logger.info(f"Created source file: {source_file_id}")
+                else:
+                    logger.info(
+                        f"Already created source file: {source_file_id}. Skipping.."
+                    )
+
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:  # noqa
-            logger.exception(f"Failed to process Translation {translation.uuid}")
+            logger.exception(f"Failed to process project {project_id} ({project.pk})")
             continue
+
+        # Now try to start any project that are ready to start
+        for project_to_start in _get_projects_to_start():
+            try:
+                client.start_project(project_to_start.lc_project_id)
+                project_to_start.lc_project_status = LanguageCloudStatus.IN_PROGRESS
+                project_to_start.save()
+            except RequestException:
+                logger.exception(
+                    f"Failed to start project {project_to_start.lc_project_id}"
+                )
 
 
 def _import(client, logger):
@@ -216,7 +264,7 @@ def _import(client, logger):
     lc_projects = (
         LanguageCloudProject.objects.all()
         .exclude(internal_status=LanguageCloudProject.STATUS_IMPORTED)
-        .exclude(lc_project_status="archived")
+        .exclude(lc_project_status=LanguageCloudStatus.ARCHIVED)
         .exclude(lc_project_id="")
         .order_by("id")
     )
@@ -237,7 +285,10 @@ def _import(client, logger):
             db_project.lc_project_status = api_project["status"]
             db_project.save()
 
-            if api_project["status"] not in ("inProgress", "completed"):
+            if api_project["status"] not in (
+                LanguageCloudStatus.IN_PROGRESS,
+                LanguageCloudStatus.COMPLETED,
+            ):
                 logger.info(
                     f"LanguageCloud Project Status: \"{api_project['status']}\". Skipping.."
                 )

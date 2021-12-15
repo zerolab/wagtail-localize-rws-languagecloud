@@ -13,7 +13,7 @@ from .helpers import create_test_page, create_test_po
 
 def _create_user(username, email):
     user_model = get_user_model()
-    user_data = dict()
+    user_data = {}
     user_data[user_model.USERNAME_FIELD] = username
     user_data["email"] = email
     user_data["password"] = "abc123"

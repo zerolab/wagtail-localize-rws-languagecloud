@@ -93,6 +93,24 @@ class ApiClient:
         sleep(self.api_sleep_seconds)
         return r.json()
 
+    def start_project(self, project_id):
+        """
+        Starts a project, given a project_id
+        https://languagecloud.sdl.com/lc/api-docs/rest-api/project/startproject
+        """
+        self.logger.debug(f"start_project {project_id}")
+        if not self.is_authenticated:
+            raise NotAuthenticated()
+
+        r = requests.put(
+            f"{self.api_base}/projects/{project_id}/start",
+            headers=self.headers,
+            timeout=REQUEST_TIMEOUT,
+        )
+        self.logger.debug(r.text)
+        r.raise_for_status()
+        sleep(self.api_sleep_seconds)
+
     def create_source_file(
         self, project_id, po_file, filename, source_locale, target_locale
     ):
