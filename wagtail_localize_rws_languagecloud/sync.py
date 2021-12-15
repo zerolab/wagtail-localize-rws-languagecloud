@@ -285,7 +285,10 @@ def _import(client, logger):
             db_project.lc_project_status = api_project["status"]
             db_project.save()
 
-            if api_project["status"] not in (LanguageCloudStatus.IN_PROGRESS, LanguageCloudStatus.COMPLETED):
+            if api_project["status"] not in (
+                LanguageCloudStatus.IN_PROGRESS,
+                LanguageCloudStatus.COMPLETED,
+            ):
                 logger.info(
                     f"LanguageCloud Project Status: \"{api_project['status']}\". Skipping.."
                 )
