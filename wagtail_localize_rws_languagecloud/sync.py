@@ -207,11 +207,9 @@ def _export(client, logger):
             lc_source_files = project.languagecloudfile_set.all().select_related(
                 "translation", "translation__target_locale"
             )
-            remote_files_created = 0
             for lc_source_file in lc_source_files:
                 translation = lc_source_file.translation
                 if not translation.enabled:
-                    remote_files_created += 1  # adds to the total count
                     logger.debug(
                         f"Skipping inactive translation {translation.uuid} for source file {lc_source_file}"
                     )
@@ -234,24 +232,14 @@ def _export(client, logger):
                             source_locale.language_code,
                             translation.target_locale.language_code,
                         )
-                        remote_files_created += 1
                     except (RequestException, KeyError):
                         logger.error("Failed to create source file")
                         continue
                     logger.info(f"Created source file: {source_file_id}")
                 else:
-                    remote_files_created += 1
                     logger.info(
                         f"Already created source file: {source_file_id}. Skipping.."
                     )
-
-            if remote_files_created == len(lc_source_files):
-                try:
-                    client.start_project(project_id)
-                    project.lc_project_status = LanguageCloudStatus.IN_PROGRESS
-                    project.save()
-                except RequestException:
-                    logger.exception(f"Failed to start project {project_id}")
 
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -259,8 +247,7 @@ def _export(client, logger):
             logger.exception(f"Failed to process project {project_id} ({project.pk})")
             continue
 
-        # now try to start any project that are ready to start, but somehow did not
-        # get started above
+        # Now try to start any project that are ready to start
         for project_to_start in _get_projects_to_start():
             try:
                 client.start_project(project_to_start.lc_project_id)
