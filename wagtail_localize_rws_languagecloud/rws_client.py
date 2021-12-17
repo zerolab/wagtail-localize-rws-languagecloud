@@ -245,3 +245,21 @@ class ApiClient:
         if should_sleep:
             sleep(self.api_sleep_seconds)
         return r.json()
+
+    def _get(self, url):
+        """
+        Generic get method. This is mainly here to make ad-hoc debugging easier.
+        It is not called anywhere
+        """
+        self.logger.debug("get")
+        if not self.is_authenticated:
+            raise NotAuthenticated()
+
+        r = requests.get(
+            f"{self.api_base}/{url}",
+            headers=self.headers,
+            timeout=REQUEST_TIMEOUT,
+        )
+        self.logger.debug(r.text)
+        r.raise_for_status()
+        return r.json()
