@@ -115,6 +115,8 @@ class TestApiClient(TestCase):
                 "fakedesc",
                 "faketemplate",
                 "fakelocation",
+                "en",
+                ["fr"],
             )
 
     @override_settings(
@@ -143,6 +145,8 @@ class TestApiClient(TestCase):
             "fakedesc",
             "faketemplate",
             "fakelocation",
+            "en",
+            ["fr", "de-de"],
         )
         self.assertEqual(len(responses.calls), 1)
         self.assertDictEqual(
@@ -152,6 +156,16 @@ class TestApiClient(TestCase):
                 "description": "fakedesc",
                 "projectTemplate": {"id": "faketemplate"},
                 "location": "fakelocation",
+                "languageDirections": [
+                    {
+                        "sourceLanguage": {"languageCode": "en"},
+                        "targetLanguage": {"languageCode": "fr"},
+                    },
+                    {
+                        "sourceLanguage": {"languageCode": "en"},
+                        "targetLanguage": {"languageCode": "de-de"},
+                    },
+                ],
             },
             json.loads(responses.calls[0].request.body),
         )
@@ -184,6 +198,8 @@ class TestApiClient(TestCase):
                 "fakedesc",
                 "faketemplate",
                 "fakelocation",
+                "en",
+                ["fr"],
             )
         self.assertEqual(len(responses.calls), 1)
 

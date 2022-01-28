@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy
 from wagtail.core.models import Page
 
@@ -225,3 +226,14 @@ class LanguageCloudProjectSettings(models.Model):
     @property
     def formatted_due_date(self):
         return self.due_date.strftime("%Y-%m-%dT%H:%M:%S.000Z")
+
+    @cached_property
+    def source_language_code(self):
+        return self.translation_source.locale.language_code
+
+    @cached_property
+    def target_language_codes(self):
+        return [
+            translation.target_locale.language_code
+            for translation in self.translations.all().select_related("target_locale")
+        ]
