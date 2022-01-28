@@ -16,10 +16,7 @@ def rws_language_code(language_code):
     language_code_map = settings.WAGTAILLOCALIZE_RWS_LANGUAGECLOUD.get(
         "LANGUAGE_CODE_MAP", {}
     )
-    try:
-        return language_code_map.get(language_code, language_code)
-    except AttributeError:
-        return language_code
+    return language_code_map.get(language_code, language_code)
 
 
 class NotAuthenticated(Exception):

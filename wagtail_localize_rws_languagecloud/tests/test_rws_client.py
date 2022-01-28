@@ -466,17 +466,12 @@ class TestApiClient(TestCase):
             client.get_project_templates()
         self.assertEqual(len(responses.calls), 1)
 
+    @override_settings(
+        WAGTAILLOCALIZE_RWS_LANGUAGECLOUD={
+            "LANGUAGE_CODE_MAP": {"en": "en-US", "fr": "fr-FR"}
+        }
+    )
     def test_rws_language_code(self):
-        with override_settings(
-            WAGTAILLOCALIZE_RWS_LANGUAGECLOUD={
-                "LANGUAGE_CODE_MAP": {"en": "en-US", "fr": "fr-FR"}
-            }
-        ):
-            self.assertEqual(rws_language_code("en"), "en-US")
-            self.assertEqual(rws_language_code("fr"), "fr-FR")
-            self.assertEqual(rws_language_code("de"), "de")
-
-        with override_settings(
-            WAGTAILLOCALIZE_RWS_LANGUAGECLOUD={"LANGUAGE_CODE_MAP": "abc"}
-        ):
-            self.assertEqual(rws_language_code("en"), "en")
+        self.assertEqual(rws_language_code("en"), "en-US")
+        self.assertEqual(rws_language_code("fr"), "fr-FR")
+        self.assertEqual(rws_language_code("de"), "de")
