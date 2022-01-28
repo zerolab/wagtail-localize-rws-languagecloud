@@ -42,4 +42,19 @@ def languagecloud_settings_check(app_configs, **kwargs):
                 )
             )
 
+    dict_settings = ["LANGUAGE_CODE_MAP"]
+    for setting in dict_settings:
+        if setting not in settings.WAGTAILLOCALIZE_RWS_LANGUAGECLOUD:
+            continue
+        if not isinstance(
+            settings.WAGTAILLOCALIZE_RWS_LANGUAGECLOUD["LANGUAGE_CODE_MAP"], dict
+        ):
+            errors.append(
+                Error(
+                    f"The WAGTAILLOCALIZE_RWS_LANGUAGECLOUD['{setting}'] setting must be a dict",
+                    id="wagtail_localize_rws_languagecloud.E003",
+                    obj="wagtail_localize_rws_languagecloud",
+                )
+            )
+
     return errors
