@@ -159,3 +159,14 @@ class TestLanguageCloudProjectSettings(TestCase):
         )
 
         self.assertEqual(settings.name, f"prefix_{str(self.page)}")
+
+    def test_language_code_properties(self):
+        settings_data = {"name": "the prefix", "due_date": datetime.datetime.now()}
+        (
+            settings,
+            _,
+        ) = LanguageCloudProjectSettings.get_or_create_from_source_and_translation_data(
+            self.source, [self.translation], **settings_data
+        )
+        self.assertEqual(settings.source_language_code, "en")
+        self.assertListEqual(settings.target_language_codes, ["fr"])

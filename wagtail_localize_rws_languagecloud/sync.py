@@ -59,16 +59,24 @@ def _create_local_project(project_settings: LanguageCloudProjectSettings):
 
 
 def _create_remote_project(lc_project, project_templates_and_locations, client):
-    name = lc_project.lc_settings.name
-    due_by = lc_project.lc_settings.formatted_due_date
-    description = lc_project.lc_settings.description
-    template_id = lc_project.lc_settings.template_id
+    lc_settings = lc_project.lc_settings
+    name = lc_settings.name
+    due_by = lc_settings.formatted_due_date
+    description = lc_settings.description
+    template_id = lc_settings.template_id
     location_id = project_templates_and_locations.get(
         template_id, settings.WAGTAILLOCALIZE_RWS_LANGUAGECLOUD["LOCATION_ID"]
     )
+
     try:
         create_project_resp = client.create_project(
-            name, due_by, description, template_id, location_id
+            name,
+            due_by,
+            description,
+            template_id,
+            location_id,
+            lc_settings.source_language_code,
+            lc_settings.target_language_codes,
         )
         lc_project.lc_project_id = create_project_resp["id"]
         lc_project.lc_project_status = LanguageCloudStatus.CREATED
