@@ -7,7 +7,7 @@ import responses
 from django.test import TestCase, override_settings
 from requests.exceptions import RequestException
 
-from ..rws_client import ApiClient, NotAuthenticated, NotFound
+from ..rws_client import ApiClient, NotAuthenticated, NotFound, rws_language_code
 
 
 class TestApiClient(TestCase):
@@ -465,3 +465,18 @@ class TestApiClient(TestCase):
         with self.assertRaises(RequestException):
             client.get_project_templates()
         self.assertEqual(len(responses.calls), 1)
+
+    def test_rws_language_code(self):
+        with override_settings(
+            WAGTAILLOCALIZE_RWS_LANGUAGECLOUD={
+                "LANGUAGE_CODE_MAP": {"en": "en-US", "fr": "fr-FR"}
+            }
+        ):
+            self.assertEqual(rws_language_code("en"), "en-US")
+            self.assertEqual(rws_language_code("fr"), "fr-FR")
+            self.assertEqual(rws_language_code("de"), "de")
+
+        with override_settings(
+            WAGTAILLOCALIZE_RWS_LANGUAGECLOUD={"LANGUAGE_CODE_MAP": "abc"}
+        ):
+            self.assertEqual(rws_language_code("en"), "en")

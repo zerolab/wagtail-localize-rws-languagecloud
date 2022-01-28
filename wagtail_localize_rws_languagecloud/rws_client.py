@@ -8,6 +8,20 @@ import requests
 from django.conf import settings
 
 
+def rws_language_code(language_code):
+    """
+    Returns the mapped RWS language code, if found in the LANGUAGE_CODE_MAP setting.
+    Defaults to the original value.
+    """
+    language_code_map = settings.WAGTAILLOCALIZE_RWS_LANGUAGECLOUD.get(
+        "LANGUAGE_CODE_MAP", {}
+    )
+    try:
+        return language_code_map.get(language_code, language_code)
+    except AttributeError:
+        return language_code
+
+
 class NotAuthenticated(Exception):
     pass
 
@@ -82,6 +96,7 @@ class ApiClient:
         if not self.is_authenticated:
             raise NotAuthenticated()
 
+        source_language_code = rws_language_code(source_locale)
         body = json.dumps(
             {
                 "name": name,
@@ -91,8 +106,10 @@ class ApiClient:
                 "location": location_id,
                 "languageDirections": [
                     {
-                        "sourceLanguage": {"languageCode": source_locale},
-                        "targetLanguage": {"languageCode": target_locale},
+                        "sourceLanguage": {"languageCode": source_language_code},
+                        "targetLanguage": {
+                            "languageCode": rws_language_code(target_locale)
+                        },
                     }
                     for target_locale in target_locales
                 ],
@@ -144,8 +161,8 @@ class ApiClient:
                     "name": filename,
                     "role": "translatable",
                     "type": "native",
-                    "language": source_locale,
-                    "targetLanguages": [target_locale],
+                    "language": rws_language_code(source_locale),
+                    "targetLanguages": [rws_language_code(target_locale)],
                 }
             )
         }
