@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+## [0.5] - 2022-01-31
+
+### Added
+
+- Wagtail content language to RWS language code mapper
+  This introduces a new `LANGUAGE_CODE_MAP` setting
+  ```py
+  WAGTAILLOCALIZE_RWS_LANGUAGECLOUD = {
+      # (optional) Provide a WAGTAIL_CONTENT_LANGUAGE code to RWS language code map
+      # RWS expects region codes (e.g. "en-US", "de-DE") whereas Wagtail will happily
+      # accept two letter lanugage code ("en", "de"). You can also use this mapping
+      # to map dialect language codes to the main supported language
+      "LANGUAGE_CODE_MAP": {
+          "en": "en-US",
+          "ja": "ja-JP",
+          "es-mx": "es-ES",
+      },
+  }
+  ```
+
+### Changed
+
+- Projects are now created in RWS with language directions, matching the selected target locales.
+
 ## [0.4] - 2021-12-15
 
 ### Added
