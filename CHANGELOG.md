@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Fixed
+
+- Mark `LanguageCloud` project status as completed when all its files are imported. @mixxorz
+
+
 ## [0.5] - 2022-01-31
 
 ### Added
@@ -37,7 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Import target files as soon as they become available
 - Start LanguageCloud projects once all source files have been uploaded to LanguageCloud
-- Complete LanguageCloud projects once all target files have been imported into wagtail
+- Complete LanguageCloud projects once all target files have been imported into Wagtail
 
 ### Fixed
 
