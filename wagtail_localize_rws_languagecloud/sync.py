@@ -357,9 +357,12 @@ def _import(client, logger):
             if db_project.all_files_imported:
                 db_project.internal_status = LanguageCloudProject.STATUS_IMPORTED
                 db_project.save()
+
                 if api_project["status"] != "completed":
                     try:
                         client.complete_project(db_project.lc_project_id)
+                        db_project.lc_project_status = LanguageCloudStatus.COMPLETED
+                        db_project.save()
                     except (RequestException):
                         pass
         except (KeyboardInterrupt, SystemExit):

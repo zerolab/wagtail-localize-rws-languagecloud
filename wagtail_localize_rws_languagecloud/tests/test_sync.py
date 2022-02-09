@@ -80,6 +80,7 @@ class TestImport(TestCase):
         for proj in self.lc_projects:
             proj.refresh_from_db()
             self.assertEqual(proj.internal_status, LanguageCloudProject.STATUS_IMPORTED)
+            self.assertEqual(proj.lc_project_status, LanguageCloudStatus.COMPLETED)
         for file_ in self.lc_files:
             file_.refresh_from_db()
             self.assertEqual(file_.internal_status, LanguageCloudFile.STATUS_IMPORTED)
@@ -138,6 +139,9 @@ class TestImport(TestCase):
             self.lc_projects[1].internal_status, LanguageCloudProject.STATUS_IMPORTED
         )
         self.assertEqual(
+            self.lc_projects[1].lc_project_status, LanguageCloudStatus.COMPLETED
+        )
+        self.assertEqual(
             self.lc_files[1].internal_status, LanguageCloudFile.STATUS_IMPORTED
         )
         self.assertEqual(
@@ -184,6 +188,9 @@ class TestImport(TestCase):
         self.lc_projects[0].refresh_from_db()
         self.assertEqual(
             self.lc_projects[0].internal_status, LanguageCloudProject.STATUS_IMPORTED
+        )
+        self.assertEqual(
+            self.lc_projects[0].lc_project_status, LanguageCloudStatus.COMPLETED
         )
 
         self.lc_projects[1].refresh_from_db()
