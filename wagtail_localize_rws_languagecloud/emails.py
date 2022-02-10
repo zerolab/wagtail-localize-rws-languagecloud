@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy
 from wagtail.admin.mail import send_mail
 
+
 User = get_user_model()
 
 
