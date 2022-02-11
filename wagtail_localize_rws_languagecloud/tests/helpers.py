@@ -2,12 +2,17 @@ import datetime
 
 import polib
 
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.utils import timezone
 from wagtail.core.models import Page
 
 from wagtail_localize.models import TranslationSource
 from wagtail_localize.test.models import TestPage
 from wagtail_localize_rws_languagecloud.models import LanguageCloudProjectSettings
+
+
+User = get_user_model()
 
 
 def create_test_page(**kwargs):
@@ -44,3 +49,15 @@ def create_test_project_settings(translation_source, translations, **settings_da
     return LanguageCloudProjectSettings.get_or_create_from_source_and_translation_data(
         translation_source, translations, **data
     )
+
+
+def create_editor_user(username="testeditor"):
+    user = User.objects.create(
+        username=username,
+        first_name="Test",
+        last_name="Editor",
+    )
+
+    user.groups.add(Group.objects.get(name="Editors"))
+
+    return user
