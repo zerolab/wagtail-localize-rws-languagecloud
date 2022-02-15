@@ -6,6 +6,7 @@ from wagtail.admin.menu import MenuItem
 from wagtail.core import hooks
 from wagtail.core.models.i18n import Locale, TranslatableMixin
 
+from wagtail_localize.models import TranslationSource
 from wagtail_localize_rws_languagecloud import views
 
 
@@ -64,9 +65,8 @@ class TranslatePageMenuItem(ActionMenuItem):
 
         if view == "edit":
             page = context["page"]
-            page_perms = context["user_page_permissions"]
             if (
-                page_perms.user.has_perm("wagtail_localize.submit_translation")
+                request.user.has_perm("wagtail_localize.submit_translation")
                 and not page.is_root()
             ):
                 # If there's at least one locale that we haven't translated into yet, show "Translate this page" button
@@ -84,6 +84,41 @@ class TranslatePageMenuItem(ActionMenuItem):
 @hooks.register("register_page_action_menu_item")
 def register_translate_page_menu_item():
     return TranslatePageMenuItem()
+
+
+class SyncPageTranslationsMenuItem(ActionMenuItem):
+    label = _("Sync translations")
+    name = "action-sync-translations"
+    icon_name = "site"
+
+    def get_url(self, request, context):
+        page = context["page"]
+        source = TranslationSource.objects.get_for_instance_or_none(page)
+        return reverse("wagtail_localize:update_translations", args=[source.id])
+
+    def is_shown(self, request, context):
+        view = context["view"]
+
+        if view == "edit":
+            page = context["page"]
+
+            if (
+                request.user.has_perm("wagtail_localize.submit_translation")
+                and not page.is_root()
+            ):
+                # If the page is the source for translations, show "Sync translated pages" button
+                source = TranslationSource.objects.get_for_instance_or_none(page)
+                return (
+                    source is not None
+                    and source.translations.filter(enabled=True).exists()
+                )
+
+        return False
+
+
+@hooks.register("register_page_action_menu_item")
+def register_sync_translation_page_menu_item():
+    return SyncPageTranslationsMenuItem()
 
 
 class TranslateSnippetMenuItem(ActionMenuItem):
