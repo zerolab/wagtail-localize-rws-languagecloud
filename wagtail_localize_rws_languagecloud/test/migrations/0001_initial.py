@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ("wagtailcore", "0066_collection_management_permissions"),
+        ("wagtailcore", "0060_fix_workflow_unique_constraint"),
     ]
 
     operations = [
