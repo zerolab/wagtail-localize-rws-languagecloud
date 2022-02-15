@@ -87,9 +87,9 @@ def register_translate_page_menu_item():
 
 
 class SyncPageTranslationsMenuItem(ActionMenuItem):
-    label = _("Sync translations")
+    label = _("Sync translated pages")
     name = "action-sync-translations"
-    icon_name = "site"
+    icon_name = "repeat"
 
     def get_url(self, request, context):
         page = context["page"]
@@ -159,3 +159,39 @@ class TranslateSnippetMenuItem(ActionMenuItem):
 @hooks.register("register_snippet_action_menu_item")
 def register_translate_snippet_menu_item(*args):
     return TranslateSnippetMenuItem()
+
+
+class SyncSnippetTranslationsMenuItem(ActionMenuItem):
+    label = _("Sync translated snippets")
+    name = "action-sync-translations"
+    icon_name = "repeat"
+
+    def get_url(self, request, context):
+        instance = context["instance"]
+        source = TranslationSource.objects.get_for_instance_or_none(instance)
+        return reverse("wagtail_localize:update_translations", args=[source.id])
+
+    def is_shown(self, request, context):
+        model = context["model"]
+        view = context["view"]
+
+        if view == "edit":
+            if issubclass(model, TranslatableMixin) and request.user.has_perm(
+                "wagtail_localize.submit_translation"
+            ):
+                snippet = context["instance"]
+
+                # If the snippet is the source for translations, show "Sync
+                # translated snippets" button
+                source = TranslationSource.objects.get_for_instance_or_none(snippet)
+                return (
+                    source is not None
+                    and source.translations.filter(enabled=True).exists()
+                )
+
+        return False
+
+
+@hooks.register("register_snippet_action_menu_item")
+def register_sync_translation_snippet_menu_item(*args):
+    return SyncSnippetTranslationsMenuItem()

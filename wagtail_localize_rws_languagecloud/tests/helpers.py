@@ -76,4 +76,6 @@ def create_editor_user(username="testeditor"):
 
 
 def create_snippet(name="test snippet"):
-    return ExampleSnippet.objects.create(name=name)
+    snippet = ExampleSnippet.objects.create(name=name)
+    source, created = TranslationSource.get_or_create_from_instance(snippet)
+    return snippet, source
