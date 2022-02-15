@@ -1,7 +1,7 @@
 from django.contrib.auth.models import Group, Permission
 from django.test import TestCase
 from django.urls.base import reverse
-from wagtail.core.models.i18n import Locale
+from wagtail.core.models import Locale
 from wagtail.tests.utils import WagtailTestUtils
 
 from wagtail_localize.models import Translation
