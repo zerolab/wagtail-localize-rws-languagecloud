@@ -4,7 +4,7 @@ from django.views.i18n import JavaScriptCatalog
 from wagtail.admin.action_menu import ActionMenuItem
 from wagtail.admin.menu import MenuItem
 from wagtail.core import hooks
-from wagtail.core.models.i18n import Locale, TranslatableMixin
+from wagtail.core.models import Locale, TranslatableMixin
 
 from wagtail_localize.models import TranslationSource
 from wagtail_localize_rws_languagecloud import views

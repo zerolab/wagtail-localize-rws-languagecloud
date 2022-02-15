@@ -1,5 +1,5 @@
 from django.db import models
-from wagtail.core.models.i18n import TranslatableMixin
+from wagtail.core.models import TranslatableMixin
 from wagtail.snippets.models import register_snippet
 
 
