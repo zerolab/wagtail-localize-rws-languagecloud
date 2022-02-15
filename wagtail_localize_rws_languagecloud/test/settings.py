@@ -114,12 +114,9 @@ PASSWORD_HASHERS = ("django.contrib.auth.hashers.MD5PasswordHasher",)
 # https://docs.djangoproject.com/en/1.10/ref/settings/#databases
 
 DATABASES = {
-    "default": {
-        **dj_database_url.config(
-            default="sqlite:///test_wagtail_localize_rws_languagecloud.db"
-        ),
-        "TEST": {"NAME": "test.db"},
-    },
+    "default": dj_database_url.config(
+        default="sqlite:///test_wagtail_localize_rws_languagecloud.db"
+    ),
 }
 
 
