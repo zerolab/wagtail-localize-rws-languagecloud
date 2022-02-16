@@ -2,12 +2,18 @@ import datetime
 
 import polib
 
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group, Permission
 from django.utils import timezone
 from wagtail.core.models import Page
 
 from wagtail_localize.models import TranslationSource
 from wagtail_localize.test.models import TestPage
 from wagtail_localize_rws_languagecloud.models import LanguageCloudProjectSettings
+from wagtail_localize_rws_languagecloud.test.models import ExampleSnippet
+
+
+User = get_user_model()
 
 
 def create_test_page(**kwargs):
@@ -44,3 +50,32 @@ def create_test_project_settings(translation_source, translations, **settings_da
     return LanguageCloudProjectSettings.get_or_create_from_source_and_translation_data(
         translation_source, translations, **data
     )
+
+
+def create_editor_user(username="testeditor"):
+    user = User.objects.create(
+        username=username,
+        first_name="Test",
+        last_name="Editor",
+    )
+
+    user.groups.add(Group.objects.get(name="Editors"))
+
+    # Add snippet permissions
+    user.user_permissions.add(
+        *Permission.objects.filter(
+            codename__in=[
+                "add_examplesnippet",
+                "change_examplesnippet",
+                "delete_examplesnippet",
+            ]
+        )
+    )
+
+    return user
+
+
+def create_snippet(name="test snippet"):
+    snippet = ExampleSnippet.objects.create(name=name)
+    source, created = TranslationSource.get_or_create_from_instance(snippet)
+    return snippet, source
