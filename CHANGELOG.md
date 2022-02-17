@@ -7,16 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [0.6] - 2022-02-17
+
 ### Added
 
-- Add "Translate this page" action button on the page edit screen. @mixxorz
-- Add "Translate this snippet" action button on the snippet edit screen. @mixxorz
-- Add "Sync translated pages" action button on the page edit screen. @mixxorz
-- Add "Sync translated snippets" action button on the snippet edit screen. @mixxorz
+- Add "Translate this page" action button on the page edit screen.
+- Add "Translate this snippet" action button on the snippet edit screen.
+- Add "Sync translated pages" action button on the page edit screen.
+- Add "Sync translated snippets" action button on the snippet edit screen.
 
 ### Fixed
 
-- Mark `LanguageCloud` project status as completed when all its files are imported. @mixxorz
+- Mark `LanguageCloud` project status as completed when all its files are imported.
 
 ## [0.5] - 2022-01-31
 
