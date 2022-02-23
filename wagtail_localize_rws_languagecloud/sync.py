@@ -16,6 +16,7 @@ from .models import (
     LanguageCloudStatus,
 )
 from .rws_client import ApiClient, NotFound
+from .signals import translation_imported
 
 
 def _get_project_templates_and_locations(client: ApiClient):
@@ -357,6 +358,12 @@ def _import(client, logger):
             if db_project.all_files_imported:
                 db_project.internal_status = LanguageCloudProject.STATUS_IMPORTED
                 db_project.save()
+
+                translation_imported.send(
+                    sender=LanguageCloudProject,
+                    instance=db_project,
+                    translation_source_object=db_project.translation_source_object,
+                )
 
                 if api_project["status"] != "completed":
                     try:

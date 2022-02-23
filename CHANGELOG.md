@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- Add `translation_imported` signal that is triggered when a translation is
+  successfully imported from RWS LanguageCloud.
+
 ## [0.6] - 2022-02-17
 
 ### Added
