@@ -84,6 +84,50 @@ This can be run on a regular basis using a scheduler like cron. We recommend an 
 - If using cron as a scheduler, [lockrun](http://unixwiz.net/tools/lockrun.html) can be used to prevent multiple instance of the same job running simultaneously.
 - If using a queue-based scheduler like Celery Beat, the `SyncManager` class contains `is_queued` and `is_running` extension points which could be used to implement a lock strategy.
 
+## Signals
+
+`translation_imported`
+
+This signal is sent when a translation from RWS LanguageCloud is successfully imported.
+
+**Arguments:**
+
+- **sender:** `LanguageCloudProject`
+- **instance:** The specific `LanguageCloudProject` instance.
+- **source_object:** The page or snippet instance that this translation is for.
+- **translated_object:** The translated instance of the page or snippet.
+
+Here’s how you could use it to send Slack notifications.
+
+```python
+from wagtail_localize.models import get_edit_url
+from wagtail_localize_rws_languagecloud.signals import translation_imported
+import requests
+
+# Let everyone know when translations come back from RWS LanguageCloud
+def send_to_slack(sender, instance, source_object, translated_object, **kwargs):
+    url = (
+        "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX"
+    )
+
+    edit_url = "https://www.mysite.com" + get_edit_url(translated_object)
+
+    values = {
+        "text": f"Translated content for '{translated_object}' is ready for review at: {edit_url}",
+        "channel": "#translation-notifications",
+        "username": "Wagtail",
+        "icon_emoji": ":rocket:",
+    }
+
+    requests.post(url, values)
+
+
+# Register a receiver
+translation_imported.connect(send_to_slack)
+```
+
+For more information on signal handlers, see [the Django docs](https://docs.djangoproject.com/en/stable/topics/signals/#connecting-receiver-functions).
+
 ## How it works
 
 This plugin uses `wagtail-localize` to convert pages into segments and build new pages from translated segments. `wagtail-localize` provides a web interface for translating these segments in Wagtail itself and this plugin plays nicely with that (translations can be made from the Wagtail side too).

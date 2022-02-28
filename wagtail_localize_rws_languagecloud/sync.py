@@ -16,6 +16,7 @@ from .models import (
     LanguageCloudStatus,
 )
 from .rws_client import ApiClient, NotFound
+from .signals import translation_imported
 
 
 def _get_project_templates_and_locations(client: ApiClient):
@@ -336,6 +337,13 @@ def _import(client, logger):
                         "SEND_EMAILS", False
                     ):
                         send_emails(db_source_file.translation)
+
+                    translation_imported.send(
+                        sender=LanguageCloudProject,
+                        instance=db_project,
+                        source_object=db_project.translation_source_object,
+                        translated_object=db_source_file.translation.get_target_instance(),
+                    )
                 except SuspiciousOperation as e:
                     logger.exception(e)
                     db_source_file.internal_status = LanguageCloudFile.STATUS_ERROR
