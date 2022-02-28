@@ -26,7 +26,7 @@ class TestSignals(TestCase):
                 )
             ]
         )
-        locale_fr = Locale.objects.create(language_code="fr")
+        self.locale_fr = Locale.objects.create(language_code="fr")
         self.page, source = create_test_page(
             title="Test page",
             slug="test-page",
@@ -34,7 +34,7 @@ class TestSignals(TestCase):
         )
         translation = Translation.objects.create(
             source=source,
-            target_locale=locale_fr,
+            target_locale=self.locale_fr,
         )
         self.project = LanguageCloudProject.objects.create(
             translation_source=source,
@@ -81,5 +81,6 @@ class TestSignals(TestCase):
             signal=translation_imported,
             sender=LanguageCloudProject,
             instance=self.project,
-            translation_source_object=self.page,
+            source_object=self.page,
+            translated_object=self.page.get_translation(self.locale_fr),
         )

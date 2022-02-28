@@ -337,6 +337,13 @@ def _import(client, logger):
                         "SEND_EMAILS", False
                     ):
                         send_emails(db_source_file.translation)
+
+                    translation_imported.send(
+                        sender=LanguageCloudProject,
+                        instance=db_project,
+                        source_object=db_project.translation_source_object,
+                        translated_object=db_source_file.translation.get_target_instance(),
+                    )
                 except SuspiciousOperation as e:
                     logger.exception(e)
                     db_source_file.internal_status = LanguageCloudFile.STATUS_ERROR
@@ -358,12 +365,6 @@ def _import(client, logger):
             if db_project.all_files_imported:
                 db_project.internal_status = LanguageCloudProject.STATUS_IMPORTED
                 db_project.save()
-
-                translation_imported.send(
-                    sender=LanguageCloudProject,
-                    instance=db_project,
-                    translation_source_object=db_project.translation_source_object,
-                )
 
                 if api_project["status"] != "completed":
                     try:
