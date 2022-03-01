@@ -3,5 +3,5 @@ default_app_config = (
 )
 
 
-VERSION = (0, 6, 0)
+VERSION = (0, 7, 0)
 __version__ = ".".join(map(str, VERSION))
