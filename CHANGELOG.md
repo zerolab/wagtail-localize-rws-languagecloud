@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Fixed
+
+- Strip special characters in LanguageCloud project names
+
 ## [0.7] - 2022-03-01
 
 ### Added
