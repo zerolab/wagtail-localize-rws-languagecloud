@@ -183,3 +183,11 @@ WAGTAILLOCALIZE_RWS_LANGUAGECLOUD = {}
 # we will set up the settings we need for each test case
 # using the @override_settings decorator
 SILENCED_SYSTEM_CHECKS = ["wagtail_localize_rws_languagecloud.E002"]
+
+# Import settings from local_settings.py file if it exists. Please use it to
+# keep settings that are not meant to be checked into Git and never check it
+# in.
+try:
+    from .local_settings import *  # noqa
+except ImportError:
+    pass
