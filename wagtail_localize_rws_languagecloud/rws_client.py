@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 
 from time import sleep
 
@@ -93,10 +94,13 @@ class ApiClient:
         if not self.is_authenticated:
             raise NotAuthenticated()
 
+        # Ensure the name doesn't include special characters
+        cleaned_name = re.sub("[^A-Za-z0-9\\-\\_ ]+", "", name)
+
         source_language_code = rws_language_code(source_locale)
         body = json.dumps(
             {
-                "name": name,
+                "name": cleaned_name,
                 "dueBy": due_by,
                 "description": description,
                 "projectTemplate": {"id": template_id},
