@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Fixed
+
+- Handle invalid language cloud project statuses
+
 ## [0.7] - 2022-03-01
 
 ### Added
