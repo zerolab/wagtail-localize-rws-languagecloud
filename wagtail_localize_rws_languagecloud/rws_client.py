@@ -9,6 +9,9 @@ import requests
 from django.conf import settings
 
 
+safe_characters = re.compile(r"[^\w\- ]+")
+
+
 def rws_language_code(language_code):
     """
     Returns the mapped RWS language code, if found in the LANGUAGE_CODE_MAP setting.
@@ -95,7 +98,7 @@ class ApiClient:
             raise NotAuthenticated()
 
         # Ensure the name doesn't include special characters
-        cleaned_name = re.sub("[^A-Za-z0-9\\-\\_ ]+", "", name)
+        cleaned_name = safe_characters.sub("", name)
 
         source_language_code = rws_language_code(source_locale)
         body = json.dumps(
