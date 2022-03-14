@@ -162,3 +162,16 @@ $ pre-commit install
 # Optional, run all checks once for this, then the checks will run only on the changed files
 $ pre-commit run --all-files
 ```
+
+### local_settings.py
+
+You can add a `local_settings.py` file next to `settings.py` for any settings that you need when running the project locally.
+
+For example, you might want to set a `NAME` for the SQLite test database so that `--keepdb` works.
+
+```python
+# wagtail_localize_rws_languagecloud/test/local_settings.py
+from .settings import DATABASES
+
+DATABASES["default"]["TEST"] = {"NAME": "test.db"}
+```
