@@ -170,3 +170,31 @@ class TestLanguageCloudProjectSettings(TestCase):
         )
         self.assertEqual(settings.source_language_code, "en")
         self.assertListEqual(settings.target_language_codes, ["fr"])
+
+
+class TestLanguageCloudProject(TestCase):
+    def test_lc_project_status_label(self):
+        _, source = create_test_page(
+            title="Test page",
+            slug="test-page",
+            test_charfield="Some test translatable content",
+        )
+
+        statuses = LanguageCloudStatus.choices
+
+        for value, label in statuses:
+            with self.subTest(value=value, label=label):
+                project = LanguageCloudProject(lc_project_status=value)
+
+                self.assertEqual(label, project.lc_project_status_label)
+
+    def test_lc_project_status_label_unknown_value(self):
+        _, source = create_test_page(
+            title="Test page",
+            slug="test-page",
+            test_charfield="Some test translatable content",
+        )
+
+        project = LanguageCloudProject(lc_project_status="some-unknown-value")
+
+        self.assertEqual("some-unknown-value", project.lc_project_status_label)
