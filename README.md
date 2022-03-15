@@ -12,12 +12,13 @@ This allows users of [RWS LanguageCloud](https://www.rws.com/translation/languag
 ## Setup
 
 1. `pip install wagtail-localize-rws-languagecloud`
-2. Add to `INSTALLED_APPS` in Django settings:
+2. Add `wagtail_localize_rws_languagecloud` to `INSTALLED_APPS` _before_ `wagtail.admin`:
 
    ```python
    INSTALLED_APPS = [
        # ...
        "wagtail_localize_rws_languagecloud",
+       "wagtail.admin",
    ]
    ```
 
