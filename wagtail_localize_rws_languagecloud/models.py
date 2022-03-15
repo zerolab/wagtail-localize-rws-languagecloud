@@ -84,7 +84,10 @@ class LanguageCloudProject(StatusModel):
 
     @property
     def lc_project_status_label(self):
-        return LanguageCloudStatus(self.lc_project_status).label
+        if self.lc_project_status in LanguageCloudStatus:
+            return LanguageCloudStatus(self.lc_project_status).label
+
+        return self.lc_project_status
 
 
 class LanguageCloudFile(StatusModel):
