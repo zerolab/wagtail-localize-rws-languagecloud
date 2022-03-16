@@ -203,6 +203,43 @@ class TestApiClient(TestCase):
             )
         self.assertEqual(len(responses.calls), 1)
 
+    @override_settings(
+        WAGTAILLOCALIZE_RWS_LANGUAGECLOUD={
+            "TEMPLATE_ID": "faketemplate",
+            "LOCATION_ID": "fakelocation",
+        },
+    )
+    @responses.activate
+    def test_create_project_with_special_characters(self):
+        responses.add(
+            responses.POST,
+            "https://lc-api.sdl.com/public-api/v1/projects",
+            json={"id": "123456"},
+            status=200,
+        )
+        client = ApiClient()
+
+        # fake the auth step
+        client.is_authenticated = True
+        client.headers = {}
+
+        resp = client.create_project(
+            "my project_My page #!?@#$%^&*()_+-= But without special characters",
+            "2020-01-01T00:00:01.000Z",
+            "fakedesc",
+            "faketemplate",
+            "fakelocation",
+            "en",
+            ["fr", "de-de"],
+        )
+        self.assertEqual(len(responses.calls), 1)
+
+        resp_data = json.loads(responses.calls[0].request.body)
+        self.assertEqual(
+            "my project_My page _- But without special characters", resp_data["name"]
+        )
+        self.assertEqual(resp, {"id": "123456"})
+
     def test_create_source_file_not_authenticated(self):
         client = ApiClient()
         with self.assertRaises(NotAuthenticated):

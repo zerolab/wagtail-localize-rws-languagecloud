@@ -1,11 +1,15 @@
 import json
 import logging
+import re
 
 from time import sleep
 
 import requests
 
 from django.conf import settings
+
+
+safe_characters = re.compile(r"[^\w\- ]+")
 
 
 def rws_language_code(language_code):
@@ -93,10 +97,13 @@ class ApiClient:
         if not self.is_authenticated:
             raise NotAuthenticated()
 
+        # Ensure the name doesn't include special characters
+        cleaned_name = safe_characters.sub("", name)
+
         source_language_code = rws_language_code(source_locale)
         body = json.dumps(
             {
-                "name": name,
+                "name": cleaned_name,
                 "dueBy": due_by,
                 "description": description,
                 "projectTemplate": {"id": template_id},

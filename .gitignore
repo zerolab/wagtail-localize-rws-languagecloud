@@ -160,3 +160,4 @@ cython_debug/
 /node_modules
 /test-static
 /test-media
+local_settings.py
