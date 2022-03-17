@@ -3,8 +3,10 @@ import django_filters
 from django.shortcuts import get_object_or_404
 from django.utils.translation import gettext_lazy
 from django.views.generic.base import TemplateView
+from django.views.generic.detail import SingleObjectMixin
 from django_filters.constants import EMPTY_VALUES
 from wagtail.admin.filters import WagtailFilterSet
+from wagtail.admin.views.pages.utils import get_valid_next_url_from_request
 from wagtail.admin.views.reports import ReportView
 from wagtail.core.models import Locale
 
@@ -81,10 +83,23 @@ class LanguageCloudReportView(ReportView):
 default_update_translations_view = UpdateTranslationsView.as_view()
 
 
-class UpdateTranslationsOverrideView(TemplateView):
+class UpdateTranslationsOverrideView(SingleObjectMixin, TemplateView):
     template_name = (
         "wagtail_localize_rws_languagecloud/admin/update_translations_override.html"
     )
+
+    title = gettext_lazy("Update existing translations")
+
+    def get_object(self):
+        return get_object_or_404(
+            TranslationSource, id=self.kwargs["translation_source_id"]
+        )
+
+    def get_title(self):
+        return self.title
+
+    def get_subtitle(self):
+        return self.object.object_repr
 
     def dispatch(self, request, *args, translation_source_id, **kwargs):
         """
@@ -98,11 +113,11 @@ class UpdateTranslationsOverrideView(TemplateView):
         a translation is imported from LanguageCloud
         """
 
-        source = get_object_or_404(TranslationSource, id=translation_source_id)
+        self.object = self.get_object()
 
         has_open_projects = (
             LanguageCloudProject.objects.filter(
-                translation_source=source,
+                translation_source=self.object,
             )
             .exclude(
                 lc_project_status__in=[
@@ -119,3 +134,8 @@ class UpdateTranslationsOverrideView(TemplateView):
             )
 
         return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["back_url"] = get_valid_next_url_from_request(self.request)
+        return context
