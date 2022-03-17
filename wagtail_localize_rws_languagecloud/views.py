@@ -1,12 +1,17 @@
 import django_filters
 
+from django.shortcuts import get_object_or_404
 from django.utils.translation import gettext_lazy
+from django.views.generic.base import TemplateView
 from django_filters.constants import EMPTY_VALUES
 from wagtail.admin.filters import WagtailFilterSet
 from wagtail.admin.views.reports import ReportView
 from wagtail.core.models import Locale
 
-from .models import LanguageCloudFile, LanguageCloudStatus
+from wagtail_localize.models import TranslationSource
+from wagtail_localize.views.update_translations import UpdateTranslationsView
+
+from .models import LanguageCloudFile, LanguageCloudProject, LanguageCloudStatus
 
 
 class SourceTitleFilter(django_filters.CharFilter):
@@ -71,3 +76,46 @@ class LanguageCloudReportView(ReportView):
             .select_related("translation")
             .select_related("translation__source")
         )
+
+
+default_update_translations_view = UpdateTranslationsView.as_view()
+
+
+class UpdateTranslationsOverrideView(TemplateView):
+    template_name = (
+        "wagtail_localize_rws_languagecloud/admin/update_translations_override.html"
+    )
+
+    def dispatch(self, request, *args, translation_source_id, **kwargs):
+        """
+        Disallow updating translations if there are open LanguageCloud projects
+
+        When there is a languagecloud project that is ongoing (not completed or
+        archived) for the given translation source, do not allow editors to
+        update the translations.
+
+        This is to prevent conflicts between older and newer translations when
+        a translation is imported from LanguageCloud
+        """
+
+        source = get_object_or_404(TranslationSource, id=translation_source_id)
+
+        has_open_projects = (
+            LanguageCloudProject.objects.filter(
+                translation_source=source,
+            )
+            .exclude(
+                lc_project_status__in=[
+                    LanguageCloudStatus.COMPLETED,
+                    LanguageCloudStatus.ARCHIVED,
+                ]
+            )
+            .exists()
+        )
+
+        if not has_open_projects:
+            return default_update_translations_view(
+                request, **kwargs, translation_source_id=translation_source_id
+            )
+
+        return super().dispatch(request, *args, **kwargs)
