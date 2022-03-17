@@ -86,7 +86,10 @@ class TestUpdateTranslationsOverride(TestCase):
 
                 # Response should be overridden by us
                 self.assertEqual(200, response.status_code)
-                self.assertContains(response, "Unable to update translations")
+                self.assertTemplateUsed(
+                    response,
+                    "wagtail_localize_rws_languagecloud/admin/update_translations_override.html",
+                )
 
     def test_should_allow_update_translations(self):
         statuses = [
