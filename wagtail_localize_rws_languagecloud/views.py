@@ -110,7 +110,7 @@ class UpdateTranslationsOverrideView(SingleObjectMixin, TemplateView):
         update the translations.
 
         This is to prevent conflicts between older and newer translations when
-        a translation is imported from LanguageCloud
+        a translation is imported from LanguageCloud.
         """
 
         self.object = self.get_object()
