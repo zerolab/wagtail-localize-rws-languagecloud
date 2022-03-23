@@ -7,7 +7,8 @@ from wagtail.core import hooks
 from wagtail.core.models import Locale, TranslatableMixin
 
 from wagtail_localize.models import TranslationSource
-from wagtail_localize_rws_languagecloud import views
+
+from . import views
 
 
 @hooks.register("register_admin_urls")
@@ -33,6 +34,17 @@ def register_admin_urls():
                 namespace="wagtail_localize_rws_languagecloud",
             ),
         )
+    ]
+
+
+@hooks.register("register_admin_urls")
+def override_wagtail_localize_urls():
+    return [
+        path(
+            "localize/update/<int:translation_source_id>/",
+            views.UpdateTranslationsOverrideView.as_view(),
+            name="update_translations",
+        ),
     ]
 
 

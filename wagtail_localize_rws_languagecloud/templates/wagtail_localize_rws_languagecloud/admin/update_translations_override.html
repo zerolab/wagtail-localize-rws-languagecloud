@@ -1,0 +1,23 @@
+{% extends "wagtailadmin/base.html" %}
+
+{% load i18n %}
+
+{% block titletag %}{{ view.get_title }} {{ view.get_subtitle }}{% endblock %}
+
+{% block content %}
+    {% include "wagtailadmin/shared/header.html" with title=view.get_title subtitle=view.get_subtitle icon="doc-empty-inverse" %}
+
+    <div class="nice-padding">
+      <div class="help-block help-info">
+        <p><strong>{% trans "Translations for this page can't be updated right now" %}</strong></p>
+        <p>
+          {% trans "This page is currently being translated on LanguageCloud. It cannot be synced at this time in order to avoid conflicts with existing translated pages." %}
+        </p>
+        <p>
+          {% trans "Translated pages can be resynced as soon as all of the ongoing translations are completed." %}
+        </p>
+      </div>
+
+      <a href="{{ back_url }}" class="button button-secondary">{% trans "Go back" %}</a>
+    </div>
+{% endblock content %}
