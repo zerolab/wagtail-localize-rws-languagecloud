@@ -26,6 +26,10 @@ class Importer:
                 f"Expected PO file as string, received {target_file}"
             )
 
+        # Remove line sep (u2028) characters from the po string
+        # This is a workaround for a bug in polib.
+        target_file = target_file.replace("\u2028", "")
+
         warnings = translation.import_po(polib.pofile(target_file))
         for warning in warnings:
             if isinstance(warning, UnknownContext):
