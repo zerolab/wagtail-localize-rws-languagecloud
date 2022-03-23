@@ -1,0 +1,29 @@
+{% extends "wagtailadmin/generic/edit.html" %}
+{% load i18n wagtailadmin_tags wagtaillocalizerwslanguagecloud_tags %}
+
+{% block bodyclass %}page-editor{% endblock %}
+
+{% block titletag %}{% blocktrans with instance=translation.source.as_instance locale=translation.target_locale %}Translation of {{ instance }} into {{ locale }}{% endblocktrans %}{% endblock %}
+
+{% block content %}
+  <div class="js-translation-editor" data-props="{% hijack_wagtail_localize_edit_translation_props props %}">
+        {# Generates the CSRF token hidden input. This is read by the JavaScript. #}
+        {% csrf_token %}
+    </div>
+{% endblock %}
+
+{% block extra_css %}
+    {% include "wagtailadmin/pages/_editor_css.html" %}
+    <link rel="stylesheet" href="{% versioned_static 'wagtail_localize_rws_languagecloud/css/wagtail-localize-overrides.css' %}" type="text/css">
+{% endblock %}
+
+{% block extra_js %}
+    {% include "wagtailadmin/pages/_editor_js.html" %}
+
+    <script type="text/javascript" src="{% url 'wagtail_localize:javascript_catalog' %}"></script>
+    <script type="text/javascript" src="{% versioned_static 'wagtailadmin/js/page-chooser-modal.js' %}"></script>
+    <script type="text/javascript" src="{% versioned_static 'wagtailimages/js/image-chooser-modal.js' %}"></script>
+    <script type="text/javascript" src="{% versioned_static 'wagtaildocs/js/document-chooser-modal.js' %}"></script>
+    <script type="text/javascript" src="{% versioned_static 'wagtailsnippets/js/snippet-chooser-modal.js' %}"></script>
+    <script type="text/javascript" src="{% versioned_static 'wagtail_localize/js/wagtail-localize.js' %}"></script>
+{% endblock %}

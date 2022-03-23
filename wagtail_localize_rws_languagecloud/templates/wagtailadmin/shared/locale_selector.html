@@ -1,5 +1,8 @@
 {# Based on listing/_button_with_dropdown.html #}
 {% load wagtailadmin_tags wagtaillocalizerwslanguagecloud_tags %}
+
+<link rel="stylesheet" href="{% versioned_static 'wagtail_localize_rws_languagecloud/css/wagtail-localize-overrides.css' %}" type="text/css">
+
 {% if translations %}
     {% language_cloud_statuses as lc_statuses %}
     <div class="c-dropdown t-inverted {{ class }}" style="display: inline-block;" data-dropdown>
@@ -13,7 +16,7 @@
         <div class="t-dark">
             <ul class="c-dropdown__menu u-toggle  u-arrow u-arrow--tl u-background">
             {% for translation in translations %}
-                <li class="c-dropdown__item " style="float: none; margin: 0.5em;">
+                <li class="c-dropdown__item ">
                     <a href="{{ translation.url }}" aria-label="{{ translation.locale.get_display_name }}" class="u-link is-live">
                       {{ translation.locale.get_display_name }}
                       {% for status_locale, status in lc_statuses %}
