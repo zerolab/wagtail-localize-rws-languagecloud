@@ -1,3 +1,4 @@
+import datetime
 import logging
 
 from unittest import mock
@@ -207,6 +208,27 @@ class TestImporter(TestCase):
         importer = Importer(file_mock, logging.getLogger("dummy"))
         with self.assertRaises(SuspiciousOperation):
             importer.import_po(self.translation, "/etc/passwd")
+
+    def test_importer_line_sep_char(self):
+        po_string = f"""#
+msgid ""
+msgstr ""
+"POT-Creation-Date: {datetime.datetime.utcnow()}\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+
+msgid "test_charfield"
+"Communicate on any channel  "
+"<br/>your customers prefer"
+msgstr ""
+"Kommunizieren Sie über die  <br/>bevorzugten Kanäle Ihrer Kundschaft"
+        """
+
+        file_mock = mock.Mock()
+        importer = Importer(file_mock, logging.getLogger("dummy"))
+
+        # This next line crashes without the fix
+        importer.import_po(self.translation, po_string)
 
 
 class TestImporterRichText(TestCase):
