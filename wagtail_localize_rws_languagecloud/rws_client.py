@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import re
 
 from time import sleep
@@ -159,10 +160,24 @@ class ApiClient:
         if not self.is_authenticated:
             raise NotAuthenticated()
 
+        # Clean the filename, leaving the file extension alone
+        filename_sans_ext = ""
+        parts = filename.split(os.extsep)
+        if len(parts) > 1:
+            ext = parts.pop()
+            filename_sans_ext = os.extsep.join(parts)
+        else:
+            ext = ""
+
+        # Strip out special characters from the filename
+        cleaned_filename = (
+            safe_characters.sub("", filename_sans_ext) + f"{os.extsep}{ext}"
+        )
+
         body = {
             "properties": json.dumps(
                 {
-                    "name": filename,
+                    "name": cleaned_filename,
                     "role": "translatable",
                     "type": "native",
                     "language": rws_language_code(source_locale),
@@ -170,7 +185,7 @@ class ApiClient:
                 }
             )
         }
-        files = {"file": (filename, po_file, "text/plain")}
+        files = {"file": (cleaned_filename, po_file, "text/plain")}
         r = requests.post(
             f"{self.api_base}/projects/{project_id}/source-files",
             data=body,
