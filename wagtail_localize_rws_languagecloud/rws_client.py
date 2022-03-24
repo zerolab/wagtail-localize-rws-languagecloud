@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import re
 
 from time import sleep
@@ -159,9 +160,19 @@ class ApiClient:
         if not self.is_authenticated:
             raise NotAuthenticated()
 
-        # Assume the last three characters are ".po"
-        filename_sans_suffix = filename[:-3]
-        cleaned_filename = safe_characters.sub("", filename_sans_suffix) + ".po"
+        # Clean the filename, leaving the file extension alone
+        filename_sans_ext = ""
+        parts = filename.split(os.extsep)
+        if len(parts) > 1:
+            ext = parts.pop()
+            filename_sans_ext = os.extsep.join(parts)
+        else:
+            ext = ""
+
+        # Strip out special characters from the filename
+        cleaned_filename = (
+            safe_characters.sub("", filename_sans_ext) + f"{os.extsep}{ext}"
+        )
 
         body = {
             "properties": json.dumps(
