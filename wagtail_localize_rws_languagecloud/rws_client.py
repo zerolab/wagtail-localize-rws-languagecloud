@@ -159,10 +159,14 @@ class ApiClient:
         if not self.is_authenticated:
             raise NotAuthenticated()
 
+        # Assume the last three characters are ".po"
+        filename_sans_suffix = filename[:-3]
+        cleaned_filename = safe_characters.sub("", filename_sans_suffix) + ".po"
+
         body = {
             "properties": json.dumps(
                 {
-                    "name": filename,
+                    "name": cleaned_filename,
                     "role": "translatable",
                     "type": "native",
                     "language": rws_language_code(source_locale),
@@ -170,7 +174,7 @@ class ApiClient:
                 }
             )
         }
-        files = {"file": (filename, po_file, "text/plain")}
+        files = {"file": (cleaned_filename, po_file, "text/plain")}
         r = requests.post(
             f"{self.api_base}/projects/{project_id}/source-files",
             data=body,

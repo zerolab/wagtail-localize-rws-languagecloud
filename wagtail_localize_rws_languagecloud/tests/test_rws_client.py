@@ -289,6 +289,31 @@ class TestApiClient(TestCase):
         self.assertEqual(len(responses.calls), 1)
 
     @responses.activate
+    def test_create_source_file_with_special_characters(self):
+        responses.add(
+            responses.POST,
+            "https://lc-api.sdl.com/public-api/v1/projects/fakeproject/source-files",
+            json={"id": "123456"},
+            status=200,
+        )
+        client = ApiClient()
+
+        # fake the auth step
+        client.is_authenticated = True
+        client.headers = {}
+
+        resp = client.create_source_file(
+            "fakeproject", "fakepo", "fakefilename!@#.po", "en-US", "fr-CA"
+        )
+        self.assertEqual(len(responses.calls), 1)
+        request_body = responses.calls[0].request.body.decode("utf-8")
+        # Check that the filename is sent without special characters
+        # This assertion is kinda rudimentary, but it's otherwise difficult to
+        # parse raw form-data.
+        self.assertIn('{"name": "fakefilename.po"', request_body)
+        self.assertEqual(resp, {"id": "123456"})
+
+    @responses.activate
     def test_get_project_success(self):
         responses.add(
             responses.GET,
