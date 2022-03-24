@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.7.2] - 2022-03-24
 
+### Added
+
+- Add warning when trying to "sync translations" pages that have ongoing
+  LanguageCloud projects
+
 ### Fixed
 
 - Fix an issue where a special line break character in PO files caused polib to
