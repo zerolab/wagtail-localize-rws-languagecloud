@@ -1,7 +1,7 @@
 import json
 
 from django import template
-from wagtail.core.models.i18n import Locale
+from wagtail.core.models import Locale
 
 from ..models import LanguageCloudFile
 
@@ -87,14 +87,16 @@ def hijack_wagtail_localize_edit_translation_props(context, props):
 
     # Override locale display names
     main_locale_id = locale_code_id_map[data["locale"]["code"]]
-    if status := statuses.get(main_locale_id):
+    status = statuses.get(main_locale_id)
+    if status:
         data["locale"]["displayName"] = f"{data['locale']['displayName']} ({status})"
 
     for translation in data["translations"]:
         locale = translation["locale"]
         locale_id = locale_code_id_map[locale["code"]]
 
-        if status := statuses.get(locale_id):
+        status = statuses.get(locale_id)
+        if status:
             locale["displayName"] = f"{locale['displayName']} ({status})"
 
     return json.dumps(data)
