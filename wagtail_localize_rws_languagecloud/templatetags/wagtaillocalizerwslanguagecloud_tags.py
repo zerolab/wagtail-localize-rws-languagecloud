@@ -38,14 +38,20 @@ def get_translation_status(translation_key, locale_ids):
 
 @register.simple_tag(takes_context=True)
 def language_cloud_statuses(context):
-    page = context.get("parent_page") or context.get("page")
+    translatable_object = (
+        context.get("parent_page") or context.get("page") or context.get("instance")
+    )
 
-    if not page:
+    if not translatable_object:
         return []
 
-    locale_ids = page.get_translations(inclusive=True).values_list("locale", flat=True)
+    locale_ids = translatable_object.get_translations(inclusive=True).values_list(
+        "locale", flat=True
+    )
 
-    return get_translation_status(page.translation_key, locale_ids).items()
+    return get_translation_status(
+        translatable_object.translation_key, locale_ids
+    ).items()
 
 
 @register.simple_tag(takes_context=True)
