@@ -4,7 +4,7 @@
 <link rel="stylesheet" href="{% versioned_static 'wagtail_localize_rws_languagecloud/css/wagtail-localize-overrides.css' %}" type="text/css">
 
 {% if translations %}
-    {% language_cloud_statuses as lc_statuses %}
+    {% translation_statuses as translation_status_map %}
     <div class="c-dropdown t-inverted {{ class }}" style="display: inline-block;" data-dropdown>
         <a href="javascript:void(0)" aria-label="{{ locale.get_display_name }}" class="c-dropdown__button  u-btn-current">
             {% icon name="site" class_name="default" %}
@@ -19,7 +19,7 @@
                 <li class="c-dropdown__item ">
                     <a href="{{ translation.url }}" aria-label="{{ translation.locale.get_display_name }}" class="u-link is-live">
                       {{ translation.locale.get_display_name }}
-                      {% for status_locale, status in lc_statuses %}
+                      {% for status_locale, status in translation_status_map %}
                         {% if status_locale == translation.locale.pk %}
                           ({{ status }})
                         {% endif %}

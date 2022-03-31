@@ -6,7 +6,7 @@ from wagtail.core.models import Locale
 from wagtail_localize.models import Translation
 
 from ..models import LanguageCloudFile, LanguageCloudProject
-from ..templatetags.wagtaillocalizerwslanguagecloud_tags import language_cloud_statuses
+from ..templatetags.wagtaillocalizerwslanguagecloud_tags import translation_statuses
 from .helpers import create_test_page
 
 
@@ -81,7 +81,7 @@ class TestLanguageCloudStatusesTags(TestCase):
         latest_de_lc_file.internal_status = LanguageCloudFile.STATUS_ERROR
         latest_de_lc_file.save()
 
-    def test_languagecloud_statuses_tags(self):
+    def test_translation_statuses_tag(self):
         page = self.page
 
         # 6 queries total:
@@ -96,7 +96,7 @@ class TestLanguageCloudStatusesTags(TestCase):
         # 1 + (1 [en]) + (1 + 1 [fr]) (1 + 1 [de]) = 6 queries
         with self.assertNumQueries(6):
             context = {"page": page}
-            statuses = language_cloud_statuses(context)
+            statuses = translation_statuses(context)
 
         self.assertEqual(2, len(statuses))
         self.assertIn(
