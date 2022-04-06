@@ -88,6 +88,13 @@ class TestImporter(TestCase):
 
         self.assertEqual(file_mock.save.call_count, 1)
 
+        # Check custom comment
+        string_segments = self.translation.source.stringsegment_set.all()
+        string_translations = string_segments.get_translations(
+            self.translation.target_locale
+        )
+        self.assertIn("Translated with RWS", string_translations[0].get_comment())
+
     def test_importer_snippet(self):
         snippet = TestSnippet.objects.create(field="Test snippet")
         source, created = TranslationSource.get_or_create_from_instance(snippet)
@@ -115,6 +122,13 @@ class TestImporter(TestCase):
         self.assertEqual(translated_snippet.field, "Extrait de test")
 
         self.assertEqual(file_mock.save.call_count, 1)
+
+        # Check custom comment
+        string_segments = translation.source.stringsegment_set.all()
+        string_translations = string_segments.get_translations(
+            translation.target_locale
+        )
+        self.assertIn("Translated with RWS", string_translations[0].get_comment())
 
     def test_importer_warnings(self):
         po = create_test_po(
