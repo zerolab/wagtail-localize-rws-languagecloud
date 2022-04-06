@@ -111,9 +111,11 @@ def send_to_slack(sender, instance, source_object, translated_object, **kwargs):
     )
 
     edit_url = "https://www.mysite.com" + get_edit_url(translated_object)
+    locale = translated_object.locale.get_display_name()
+    message = f"'{source_object.title}' has new translations for the '{locale}' locale. See the updated page at: {edit_url}."
 
     values = {
-        "text": f"Translated content for '{translated_object}' is ready for review at: {edit_url}",
+        "text": message,
         "channel": "#translation-notifications",
         "username": "Wagtail",
         "icon_emoji": ":rocket:",
