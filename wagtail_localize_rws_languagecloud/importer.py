@@ -30,7 +30,7 @@ class Importer:
         # This is a workaround for a bug in polib.
         target_file = target_file.replace("\u2028", "")
 
-        warnings = translation.import_po(polib.pofile(target_file))
+        warnings = translation.import_po(polib.pofile(target_file), tool_name="RWS")
         for warning in warnings:
             if isinstance(warning, UnknownContext):
                 self.logger.warning(
