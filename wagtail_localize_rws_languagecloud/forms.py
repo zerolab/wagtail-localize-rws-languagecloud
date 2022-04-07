@@ -4,6 +4,7 @@ import logging
 from django import forms
 from django.conf import settings
 from django.utils import timezone
+from django.utils.functional import classproperty
 from django.utils.translation import gettext as _
 from requests import RequestException
 from wagtail.admin.forms import WagtailAdminModelForm
@@ -64,16 +65,16 @@ class LanguageCloudProjectSettingsForm(WagtailAdminModelForm):
             widget=forms.Select(),
         )
 
-    @property
+    @classproperty
     def default_project_template_id(self):
         return settings.WAGTAILLOCALIZE_RWS_LANGUAGECLOUD.get("TEMPLATE_ID")
 
-    @property
+    @classproperty
     def default_project_name_prefix(self):
         prefix = settings.WAGTAILLOCALIZE_RWS_LANGUAGECLOUD.get("PROJECT_PREFIX", "")
         return f"{prefix}{timezone.now():%Y-%m-%d}_"
 
-    @property
+    @classproperty
     def default_due_date(self):
         now = timezone.now()
         delta = settings.WAGTAILLOCALIZE_RWS_LANGUAGECLOUD.get(

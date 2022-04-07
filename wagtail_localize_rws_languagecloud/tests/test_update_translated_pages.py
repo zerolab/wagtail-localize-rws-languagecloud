@@ -1,14 +1,24 @@
 from django.core.management import call_command
 from django.test import TestCase
+from django.test.utils import override_settings
 from django.utils import timezone
 from wagtail.core.models import Locale
 
 from wagtail_localize.models import Translation
 
-from ..models import LanguageCloudProject
+from ..models import (
+    LanguageCloudProject,
+    LanguageCloudProjectSettings,
+    LanguageCloudStatus,
+)
 from .helpers import create_editor_user, create_test_page
 
 
+@override_settings(
+    WAGTAILLOCALIZE_RWS_LANGUAGECLOUD={
+        "TEMPLATE_ID": "123",
+    }
+)
 class TestUpdateTranslatedPages(TestCase):
     def setUp(self):
         self.locale_en = Locale.objects.get(language_code="en")
@@ -27,25 +37,44 @@ class TestUpdateTranslatedPages(TestCase):
         self.page.save()
 
         # Then translate it into the other languages
-        fr_translation = Translation.objects.create(
+        self.fr_translation = Translation.objects.create(
             source=self.source,
             target_locale=self.locale_fr,
         )
-        fr_translation.save_target(publish=True)
-        de_translation = Translation.objects.create(
+        self.fr_translation.save_target(publish=True)
+        self.de_translation = Translation.objects.create(
             source=self.source,
             target_locale=self.locale_de,
         )
-        de_translation.save_target(publish=True)
+        self.de_translation.save_target(publish=True)
 
     def test_should_create_language_cloud_project(self):
         call_command("update_translated_pages")
-        lc_project = LanguageCloudProject.objects.get(source=self.source)
 
-        self.assertTrue(lc_project)
+        project_settings = LanguageCloudProjectSettings.objects.get()
+        self.assertEqual(project_settings.translation_source, self.source)
+        self.assertEqual(
+            list(project_settings.translations.all()),
+            [self.fr_translation, self.de_translation],
+        )
 
-    def test_should_skip_creating_language_cloud_project(self):
-        self.fail()
+    def test_should_skip_up_to_date_pages(self):
+        self.source.last_updated_at = timezone.now()
+        self.source.save()
 
-    def test_only_set_locales_are_translated(self):
-        self.fail()
+        call_command("update_translated_pages")
+
+        self.assertEqual(0, LanguageCloudProjectSettings.objects.count())
+
+    def test_should_skip_pages_with_ongoing_lc_projects(self):
+        LanguageCloudProject.objects.create(
+            translation_source=self.source,
+            source_last_updated_at=self.source.last_updated_at,
+            internal_status=LanguageCloudProject.STATUS_NEW,
+            lc_project_status=LanguageCloudStatus.IN_PROGRESS,
+            lc_project_id="proj",
+        )
+
+        call_command("update_translated_pages")
+
+        self.assertEqual(0, LanguageCloudProjectSettings.objects.count())
