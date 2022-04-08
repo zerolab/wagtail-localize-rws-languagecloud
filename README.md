@@ -97,40 +97,9 @@ This signal is sent when a translation from RWS LanguageCloud is successfully im
 - **source_object:** The page or snippet instance that this translation is for.
 - **translated_object:** The translated instance of the page or snippet.
 
-Here’s how you could use it to send Slack notifications.
-
-```python
-from django.utils.translation import gettext_lazy
-from wagtail_localize.models import get_edit_url
-from wagtail_localize_rws_languagecloud.signals import translation_imported
-import requests
-
-# Let everyone know when translations come back from RWS LanguageCloud
-def send_to_slack(sender, instance, source_object, translated_object, **kwargs):
-    url = (
-        "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX"
-    )
-
-    edit_url = "https://www.mysite.com" + get_edit_url(translated_object)
-    locale = translated_object.locale.get_display_name()
-    message = gettext_lazy(
-        f"'{source_object.title}' has new translations for the '{locale}' locale. See the updated page at: {edit_url}."
-    )
-
-    values = {
-        "text": message,
-        "username": "Wagtail",
-        "icon_emoji": ":rocket:",
-    }
-
-    requests.post(url, values)
-
-
-# Register a receiver
-translation_imported.connect(send_to_slack)
-```
-
 For more information on signal handlers, see [the Django docs](https://docs.djangoproject.com/en/stable/topics/signals/#connecting-receiver-functions).
+
+There are some more detailed examples of how the `translation_imported` signal can be used to send slack notifications in [slack-notification-examples.md](docs/slack-notification-examples.md).
 
 ## How it works
 
