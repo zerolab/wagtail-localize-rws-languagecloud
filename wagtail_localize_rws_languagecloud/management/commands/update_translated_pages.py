@@ -72,9 +72,9 @@ class Command(BaseCommand):
         to_update_count = len(sources_to_update)
 
         logger.info(
-            f"Found {total_count} pages with stale translated content.\n"
-            f"       {total_count - to_update_count} will be skipped.\n"
-            f"       {to_update_count} will be synced."
+            f"Found {total_count} page(s) with stale translated content.\n"
+            f"       {to_update_count} will be synced.\n"
+            f"       {total_count - to_update_count} will be skipped."
         )
 
         all_pages = {(source.page_pk, source.page_title) for source in all_sources}
@@ -82,6 +82,8 @@ class Command(BaseCommand):
         updated_pages = set()
 
         for index, source in enumerate(sources_to_update):
+            updated_pages.add((source.page_pk, source.page_title))
+
             counter = f"[{index + 1}/{to_update_count}]"
 
             if options["dry_run"]:
@@ -111,8 +113,6 @@ class Command(BaseCommand):
                 due_date=LanguageCloudProjectSettingsForm.default_due_date,
                 template_id=LanguageCloudProjectSettingsForm.default_project_template_id,
             )
-
-            updated_pages.add((source.page_pk, source.page_title))
 
         skipped_pages = all_pages - updated_pages
 

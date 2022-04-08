@@ -57,7 +57,8 @@ Found {{ total_count }} page(s) with stale translations, of which {{ updated_cou
 
 {% trans "Pages that were synced:" %}
 
-{% for page_pk, page_title in updated_pages %}{{ forloop.counter }}. {{ page_title }}: {% url 'wagtailadmin_pages:edit' page_pk %}{% empty %}-{% endfor %}
+{% for page_pk, page_title in updated_pages %}{{ forloop.counter }}. {{ page_title }}: {% url 'wagtailadmin_pages:edit' page_pk %}{% empty %}-
+{% endfor %}
 
 {% trans "Pages that were skipped because they had pending translations on RWS LanguageCloud:" %}
 
