@@ -116,7 +116,6 @@ def send_to_slack(sender, instance, source_object, translated_object, **kwargs):
 
     values = {
         "text": message,
-        "channel": "#translation-notifications",
         "username": "Wagtail",
         "icon_emoji": ":rocket:",
     }
