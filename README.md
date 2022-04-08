@@ -100,6 +100,7 @@ This signal is sent when a translation from RWS LanguageCloud is successfully im
 Here’s how you could use it to send Slack notifications.
 
 ```python
+from django.utils.translation import gettext_lazy
 from wagtail_localize.models import get_edit_url
 from wagtail_localize_rws_languagecloud.signals import translation_imported
 import requests
@@ -112,7 +113,9 @@ def send_to_slack(sender, instance, source_object, translated_object, **kwargs):
 
     edit_url = "https://www.mysite.com" + get_edit_url(translated_object)
     locale = translated_object.locale.get_display_name()
-    message = f"'{source_object.title}' has new translations for the '{locale}' locale. See the updated page at: {edit_url}."
+    message = gettext_lazy(
+        f"'{source_object.title}' has new translations for the '{locale}' locale. See the updated page at: {edit_url}."
+    )
 
     values = {
         "text": message,
