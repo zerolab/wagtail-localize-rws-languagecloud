@@ -1,6 +1,7 @@
 import logging
 
 from django.core.management.base import BaseCommand
+from django.db import transaction
 from django.db.models.expressions import F, OuterRef, Subquery
 from django.db.models.query_utils import Q
 from wagtail.core.models import Page
@@ -28,6 +29,7 @@ class Command(BaseCommand):
             help="Don't actually send the pages to RWS LanguageCloud",
         )
 
+    @transaction.atomic
     def handle(self, *args, **options):
         # Set up logging
         log_level = logging.INFO
