@@ -3,7 +3,6 @@ import logging
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.db.models.expressions import F, OuterRef, Subquery
-from django.db.models.query_utils import Q
 from wagtail.core.models import Page
 
 from wagtail_localize.models import TranslationSource
@@ -26,7 +25,7 @@ class Command(BaseCommand):
             action="store_true",
             dest="dry_run",
             default=False,
-            help="Don't actually send the pages to RWS LanguageCloud",
+            help="Don't actually sync or send the pages to RWS LanguageCloud",
         )
 
     @transaction.atomic
@@ -61,15 +60,12 @@ class Command(BaseCommand):
             last_updated_at__lt=F("last_published_at"),
         )
 
-        sources_to_update = all_sources.filter(
+        sources_to_update = all_sources.exclude(
             # Only pages without ongoing translation projects,
-            Q(languagecloudproject__isnull=True)
-            | Q(
-                languagecloudproject__lc_project_status__in=[
-                    LanguageCloudStatus.COMPLETED,
-                    LanguageCloudStatus.ARCHIVED,
-                ]
-            ),
+            languagecloudproject__lc_project_status__in=[
+                LanguageCloudStatus.CREATED,
+                LanguageCloudStatus.IN_PROGRESS,
+            ]
         )
 
         total_count = len(all_sources)
@@ -90,12 +86,12 @@ class Command(BaseCommand):
 
             if options["dry_run"]:
                 logger.info(
-                    f'{counter} Would update translations for page: "{source.page_pk} - {source.page_title}"'
+                    f'{counter} Would update translations for page: {source.page_pk} - "{source.page_title}"'
                 )
                 continue
 
             logger.info(
-                f'{counter} Updating translations for page: "{source.page_pk} - {source.page_title}"'
+                f'{counter} Updating translations for page: {source.page_pk} - "{source.page_title}"'
             )
 
             # Sync content to translated pages
@@ -120,8 +116,8 @@ class Command(BaseCommand):
 
         skipped_pages = all_pages - updated_pages
 
-        for _, page_title in skipped_pages:
-            logger.debug(f"Skipped page: {page_title}")
+        for page_pk, page_title in skipped_pages:
+            logger.debug(f'Skipped page: {page_pk} - "{page_title}"')
 
         if not options["dry_run"]:
             logger.info("Sending summary emails")

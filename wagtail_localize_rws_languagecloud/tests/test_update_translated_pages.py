@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.core.management import call_command
 from django.test import TestCase
 from django.test.utils import override_settings
@@ -70,6 +72,29 @@ class TestUpdateTranslatedPages(TestCase):
         LanguageCloudProject.objects.create(
             translation_source=self.source,
             source_last_updated_at=self.source.last_updated_at,
+            internal_status=LanguageCloudProject.STATUS_NEW,
+            lc_project_status=LanguageCloudStatus.IN_PROGRESS,
+            lc_project_id="proj",
+        )
+
+        call_command("update_translated_pages")
+
+        self.assertEqual(0, LanguageCloudProjectSettings.objects.count())
+
+    def test_should_skip_pages_with_ongoing_and_completed_lc_projects(self):
+        # Old, completed LC project
+        LanguageCloudProject.objects.create(
+            translation_source=self.source,
+            source_last_updated_at=self.source.last_updated_at,
+            internal_status=LanguageCloudProject.STATUS_IMPORTED,
+            lc_project_status=LanguageCloudStatus.ARCHIVED,
+            lc_project_id="proj",
+        )
+
+        # New, ongoing LC project
+        LanguageCloudProject.objects.create(
+            translation_source=self.source,
+            source_last_updated_at=self.source.last_updated_at + timedelta(days=1),
             internal_status=LanguageCloudProject.STATUS_NEW,
             lc_project_status=LanguageCloudStatus.IN_PROGRESS,
             lc_project_id="proj",
