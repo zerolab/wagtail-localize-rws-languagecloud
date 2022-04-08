@@ -86,7 +86,7 @@ This can be run on a regular basis using a scheduler like cron. We recommend an 
 
 ## Auto-sync translations
 
-Wagtail Localize gives you the option to sync the content of a source page to its corresponding translated pages (Sync translations). This is useful when the "source" page is updated and needs to be copied and re-translated.
+Wagtail Localize gives you the option to sync the content of a source page to its corresponding translated pages (Sync translations). This is useful when the source page is updated and needs to be copied and re-translated.
 
 This plugin provides a management command that automatically runs sync translations on pages with stale translated content.
 
@@ -105,7 +105,7 @@ Pages that match the following criteria are excluded from auto-syncing:
 - Pages that haven't been translated.
 - Pages that have pending translations on RWS LanguageCloud.
 
-You can safely preview which pages will be affected by this management command by running it with `--dry-run`:
+You can safely preview which pages will be affected by this management command by running it with `--dry-run`.
 
 ```
 ./manage.py update_translated_pages --dry-run
