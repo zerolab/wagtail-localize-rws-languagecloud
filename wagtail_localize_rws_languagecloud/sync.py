@@ -7,7 +7,7 @@ from django.db import transaction
 from django.db.models import Count, F, Q
 from requests.exceptions import RequestException
 
-from .emails import send_emails
+from .emails import send_sync_rws_emails
 from .importer import Importer
 from .models import (
     LanguageCloudFile,
@@ -336,7 +336,7 @@ def _import(client, logger):
                     if settings.WAGTAILLOCALIZE_RWS_LANGUAGECLOUD.get(
                         "SEND_EMAILS", False
                     ):
-                        send_emails(db_source_file.translation)
+                        send_sync_rws_emails(db_source_file.translation)
 
                     translation_imported.send(
                         sender=LanguageCloudProject,
