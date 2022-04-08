@@ -84,6 +84,33 @@ This can be run on a regular basis using a scheduler like cron. We recommend an 
 - If using cron as a scheduler, [lockrun](http://unixwiz.net/tools/lockrun.html) can be used to prevent multiple instance of the same job running simultaneously.
 - If using a queue-based scheduler like Celery Beat, the `SyncManager` class contains `is_queued` and `is_running` extension points which could be used to implement a lock strategy.
 
+## Auto-sync translations
+
+Wagtail Localize gives you the option to sync the content of a source page to its corresponding translated pages (Sync translations). This is useful when the "source" page is updated and needs to be copied and re-translated.
+
+This plugin provides a management command that automatically runs sync translations on pages with stale translated content.
+
+```
+./manage.py update_translated_pages
+```
+
+This command:
+
+- Runs "sync translations" on pages that have been published but not yet synced.
+- Queues these pages to be translated on LanguageCloud.
+- Sends an email summary with the list of pages that were synced or skipped.
+
+Pages that match the following criteria are excluded from auto-syncing:
+
+- Pages that haven't been translated.
+- Pages that have pending translations on RWS LanguageCloud.
+
+You can safely preview which pages will be affected by this management command by running it with `--dry-run`:
+
+```
+./manage.py update_translated_pages --dry-run
+```
+
 ## Signals
 
 `translation_imported`

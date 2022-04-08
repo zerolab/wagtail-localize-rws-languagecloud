@@ -18,7 +18,7 @@ from wagtail_localize_rws_languagecloud.models import (
 
 
 class Command(BaseCommand):
-    help = "Update translations of recently published pages and send them to RWS LanguageCloud"
+    help = "Update translations of pages with stale translated content and send them to RWS LanguageCloud"
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -44,7 +44,7 @@ class Command(BaseCommand):
         logger.addHandler(console)
         logger.setLevel(log_level)
 
-        logger.info("Updating translations of recently published pages...")
+        logger.info("Updating translations of pages with stale translated content...")
 
         # Get all pages that have been published _after_ the translation source was synced.
         pages = Page.objects.filter(
@@ -76,22 +76,27 @@ class Command(BaseCommand):
         to_update_count = len(sources_to_update)
 
         logger.info(
-            f"Found {total_count} recently updated page(s).\n"
+            f"Found {total_count} pages with stale translated content.\n"
             f"       {total_count - to_update_count} will be skipped.\n"
             f"       {to_update_count} will be synced."
-            ""
         )
 
         all_pages = {(source.page_pk, source.page_title) for source in all_sources}
 
         updated_pages = set()
 
-        for source in sources_to_update:
+        for index, source in enumerate(sources_to_update):
+            counter = f"[{index + 1}/{to_update_count}]"
+
             if options["dry_run"]:
-                logger.info(f"Would update translations for page: {source.page_title}")
+                logger.info(
+                    f'{counter} Would update translations for page: "{source.page_pk} - {source.page_title}"'
+                )
                 continue
 
-            logger.info(f"Updating translations for page: {source.page_title}")
+            logger.info(
+                f'{counter} Updating translations for page: "{source.page_pk} - {source.page_title}"'
+            )
 
             # Sync content to translated pages
             source.update_from_db()
@@ -118,8 +123,10 @@ class Command(BaseCommand):
         for _, page_title in skipped_pages:
             logger.debug(f"Skipped page: {page_title}")
 
-        send_update_translated_pages_emails(
-            list(all_pages), list(updated_pages), list(skipped_pages)
-        )
+        if not options["dry_run"]:
+            logger.info("Sending summary emails")
+            send_update_translated_pages_emails(
+                list(all_pages), list(updated_pages), list(skipped_pages)
+            )
 
         logger.info("...Done")
