@@ -13,6 +13,7 @@ from wagtail.tests.utils import WagtailTestUtils
 
 from wagtail_localize_rws_languagecloud.forms import (
     LanguageCloudProjectSettingsForm,
+    get_default_project_name_prefix,
     get_default_project_template_id,
 )
 from wagtail_localize_rws_languagecloud.models import LanguageCloudProjectSettings
@@ -55,7 +56,7 @@ class TestProjectSettingsForm(TestCase, WagtailTestUtils):
 
     def test_get_project_name_without_custom_prefix(self):
         self.assertEqual(
-            self.form.default_project_name_prefix,
+            get_default_project_name_prefix(),
             "2018-02-02_",
         )
 
@@ -64,7 +65,7 @@ class TestProjectSettingsForm(TestCase, WagtailTestUtils):
     )
     def test_get_project_name_with_custom_prefix(self):
         self.assertEqual(
-            self.form.default_project_name_prefix,
+            get_default_project_name_prefix(),
             "Website_2018-02-02_",
         )
 

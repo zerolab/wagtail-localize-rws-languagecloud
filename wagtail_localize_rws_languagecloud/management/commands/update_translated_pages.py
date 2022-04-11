@@ -12,6 +12,7 @@ from wagtail_localize_rws_languagecloud.emails import (
 )
 from wagtail_localize_rws_languagecloud.forms import (
     LanguageCloudProjectSettingsForm,
+    get_default_project_name_prefix,
     get_default_project_template_id,
 )
 from wagtail_localize_rws_languagecloud.models import (
@@ -109,7 +110,7 @@ class Command(BaseCommand):
             LanguageCloudProjectSettings.get_or_create_from_source_and_translation_data(
                 translation_source=source,
                 translations=enabled_translations,
-                name=LanguageCloudProjectSettingsForm.default_project_name_prefix,
+                name=get_default_project_name_prefix(),
                 description="Wagtail\n"
                 + LanguageCloudProjectSettingsForm._get_default_project_description(
                     None, source

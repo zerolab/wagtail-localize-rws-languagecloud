@@ -68,10 +68,10 @@ class LanguageCloudProjectSettingsForm(WagtailAdminModelForm):
             "The project name will be a combination of the "
             "supplied prefix and the source title. e.g. '%(name)s'"
             % {
-                "name": f"{self.default_project_name_prefix}{self._get_source_name(source_object_instance)}"
+                "name": f"{get_default_project_name_prefix()}{self._get_source_name(source_object_instance)}"
             }
         )
-        self.fields["name"].initial = self.default_project_name_prefix
+        self.fields["name"].initial = get_default_project_name_prefix()
         self.fields["description"].initial = self._get_default_project_description(
             source_object_instance, user=user
         )
@@ -84,11 +84,6 @@ class LanguageCloudProjectSettingsForm(WagtailAdminModelForm):
             initial=get_default_project_template_id(),
             widget=forms.Select(),
         )
-
-    @classproperty
-    def default_project_name_prefix(self):
-        prefix = settings.WAGTAILLOCALIZE_RWS_LANGUAGECLOUD.get("PROJECT_PREFIX", "")
-        return f"{prefix}{timezone.now():%Y-%m-%d}_"
 
     @classproperty
     def default_due_date(self):
