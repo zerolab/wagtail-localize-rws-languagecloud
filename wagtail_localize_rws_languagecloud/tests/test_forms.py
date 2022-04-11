@@ -14,6 +14,7 @@ from wagtail.tests.utils import WagtailTestUtils
 from wagtail_localize_rws_languagecloud.forms import (
     LanguageCloudProjectSettingsForm,
     get_default_due_date,
+    get_default_project_description,
     get_default_project_name_prefix,
     get_default_project_template_id,
 )
@@ -87,7 +88,7 @@ class TestProjectSettingsForm(TestCase, WagtailTestUtils):
 
     def test_get_default_project_description(self):
         self.assertEqual(
-            self.form._get_default_project_description(self.test_page),
+            get_default_project_description(self.test_page),
             self.test_page.full_url,
         )
 
@@ -95,14 +96,14 @@ class TestProjectSettingsForm(TestCase, WagtailTestUtils):
         user = self.create_test_user()
         self.assertIn(
             "test@email.com",
-            self.form._get_default_project_description(self.test_page, user=user),
+            get_default_project_description(self.test_page, user=user),
         )
         user.first_name = "John"
         user.last_name = "Doe"
         user.save()
         self.assertIn(
             "John Doe",
-            self.form._get_default_project_description(self.test_page, user=user),
+            get_default_project_description(self.test_page, user=user),
         )
 
     def test_get_default_project_template(self):

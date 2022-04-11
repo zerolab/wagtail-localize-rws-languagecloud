@@ -11,8 +11,8 @@ from wagtail_localize_rws_languagecloud.emails import (
     send_update_translated_pages_emails,
 )
 from wagtail_localize_rws_languagecloud.forms import (
-    LanguageCloudProjectSettingsForm,
     get_default_due_date,
+    get_default_project_description,
     get_default_project_name_prefix,
     get_default_project_template_id,
 )
@@ -112,10 +112,7 @@ class Command(BaseCommand):
                 translation_source=source,
                 translations=enabled_translations,
                 name=get_default_project_name_prefix(),
-                description="Wagtail\n"
-                + LanguageCloudProjectSettingsForm._get_default_project_description(
-                    None, source
-                ),
+                description="Wagtail\n" + get_default_project_description(source),
                 due_date=get_default_due_date(),
                 template_id=get_default_project_template_id(),
             )
