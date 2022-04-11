@@ -1,5 +1,6 @@
 import logging
 
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.db.models.expressions import F, OuterRef, Subquery
@@ -119,7 +120,10 @@ class Command(BaseCommand):
         for page_pk, page_title in skipped_pages:
             logger.debug(f'Skipped page: {page_pk} - "{page_title}"')
 
-        if not options["dry_run"]:
+        if (
+            settings.WAGTAILLOCALIZE_RWS_LANGUAGECLOUD.get("SEND_EMAILS", False)
+            and not options["dry_run"]
+        ):
             logger.info("Sending summary emails")
             send_update_translated_pages_emails(
                 list(all_pages), list(updated_pages), list(skipped_pages)
