@@ -11,7 +11,10 @@ from freezegun import freeze_time
 from wagtail.admin.edit_handlers import get_form_for_model
 from wagtail.tests.utils import WagtailTestUtils
 
-from wagtail_localize_rws_languagecloud.forms import LanguageCloudProjectSettingsForm
+from wagtail_localize_rws_languagecloud.forms import (
+    LanguageCloudProjectSettingsForm,
+    get_default_project_template_id,
+)
 from wagtail_localize_rws_languagecloud.models import LanguageCloudProjectSettings
 
 from .helpers import create_test_page
@@ -101,7 +104,7 @@ class TestProjectSettingsForm(TestCase, WagtailTestUtils):
         )
 
     def test_get_default_project_template(self):
-        self.assertEqual(self.form.default_project_template_id, "c0ffee")
+        self.assertEqual(get_default_project_template_id(), "c0ffee")
 
     def test_user_field_is_hidden(self):
         self.assertIsInstance(self.form.fields["user"].widget, forms.HiddenInput)

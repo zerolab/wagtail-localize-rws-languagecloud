@@ -19,6 +19,25 @@ from wagtail_localize_rws_languagecloud.rws_client import ApiClient, NotAuthenti
 logger = logging.getLogger(__name__)
 
 
+# Initial values for the form
+# These are split out because they are also used elsewhere
+def get_default_project_template_id():
+    return settings.WAGTAILLOCALIZE_RWS_LANGUAGECLOUD.get("TEMPLATE_ID")
+
+
+def get_default_project_name_prefix():
+    prefix = settings.WAGTAILLOCALIZE_RWS_LANGUAGECLOUD.get("PROJECT_PREFIX", "")
+    return f"{prefix}{timezone.now():%Y-%m-%d}_"
+
+
+def get_default_due_date():
+    now = timezone.now()
+    delta = settings.WAGTAILLOCALIZE_RWS_LANGUAGECLOUD.get(
+        "DUE_BY_DELTA", datetime.timedelta(days=7)
+    )
+    return now + delta
+
+
 class LanguageCloudProjectSettingsForm(WagtailAdminModelForm):
     class Meta:
         exclude = (
@@ -41,6 +60,7 @@ class LanguageCloudProjectSettingsForm(WagtailAdminModelForm):
         super().__init__(data, files, instance=instance, prefix=prefix, **kwargs)
 
         self.fields["user"].initial = user
+
         self.fields["user"].widget = forms.HiddenInput()
 
         self.fields["name"].label = _("Name prefix")
@@ -61,13 +81,9 @@ class LanguageCloudProjectSettingsForm(WagtailAdminModelForm):
         self.fields["template_id"] = forms.ChoiceField(
             label=_("Template"),
             choices=self._get_project_template_choices(),
-            initial=self.default_project_template_id,
+            initial=get_default_project_template_id(),
             widget=forms.Select(),
         )
-
-    @classproperty
-    def default_project_template_id(self):
-        return settings.WAGTAILLOCALIZE_RWS_LANGUAGECLOUD.get("TEMPLATE_ID")
 
     @classproperty
     def default_project_name_prefix(self):
@@ -139,4 +155,4 @@ class LanguageCloudProjectSettingsForm(WagtailAdminModelForm):
                 for template in project_templates["items"]
             ]
 
-        return [(self.default_project_template_id, _("Default template"))]
+        return [(get_default_project_template_id(), _("Default template"))]

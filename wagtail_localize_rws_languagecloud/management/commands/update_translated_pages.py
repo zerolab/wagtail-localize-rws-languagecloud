@@ -10,7 +10,10 @@ from wagtail_localize.models import TranslationSource
 from wagtail_localize_rws_languagecloud.emails import (
     send_update_translated_pages_emails,
 )
-from wagtail_localize_rws_languagecloud.forms import LanguageCloudProjectSettingsForm
+from wagtail_localize_rws_languagecloud.forms import (
+    LanguageCloudProjectSettingsForm,
+    get_default_project_template_id,
+)
 from wagtail_localize_rws_languagecloud.models import (
     LanguageCloudProjectSettings,
     LanguageCloudStatus,
@@ -112,7 +115,7 @@ class Command(BaseCommand):
                     None, source
                 ),
                 due_date=LanguageCloudProjectSettingsForm.default_due_date,
-                template_id=LanguageCloudProjectSettingsForm.default_project_template_id,
+                template_id=get_default_project_template_id(),
             )
 
         skipped_pages = all_pages - updated_pages
