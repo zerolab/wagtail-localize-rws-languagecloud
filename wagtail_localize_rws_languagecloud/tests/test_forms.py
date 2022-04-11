@@ -13,6 +13,7 @@ from wagtail.tests.utils import WagtailTestUtils
 
 from wagtail_localize_rws_languagecloud.forms import (
     LanguageCloudProjectSettingsForm,
+    get_default_due_date,
     get_default_project_name_prefix,
     get_default_project_template_id,
 )
@@ -71,7 +72,7 @@ class TestProjectSettingsForm(TestCase, WagtailTestUtils):
 
     def test_get_project_due_date_without_custom_delta(self):
         self.assertEqual(
-            self.form.default_due_date,
+            get_default_due_date(),
             datetime.datetime(2018, 2, 9, 12, 0, 1, tzinfo=pytz.utc),
         )
 
@@ -80,7 +81,7 @@ class TestProjectSettingsForm(TestCase, WagtailTestUtils):
     )
     def test_get_project_due_date_with_custom_delta(self):
         self.assertEqual(
-            self.form.default_due_date,
+            get_default_due_date(),
             datetime.datetime(2018, 2, 16, 12, 0, 1, tzinfo=pytz.utc),
         )
 

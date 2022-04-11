@@ -4,7 +4,6 @@ import logging
 from django import forms
 from django.conf import settings
 from django.utils import timezone
-from django.utils.functional import classproperty
 from django.utils.translation import gettext as _
 from requests import RequestException
 from wagtail.admin.forms import WagtailAdminModelForm
@@ -76,7 +75,7 @@ class LanguageCloudProjectSettingsForm(WagtailAdminModelForm):
             source_object_instance, user=user
         )
         self.fields["description"].widget = forms.Textarea(attrs={"rows": 3})
-        self.fields["due_date"].initial = self.default_due_date
+        self.fields["due_date"].initial = get_default_due_date()
 
         self.fields["template_id"] = forms.ChoiceField(
             label=_("Template"),
@@ -84,14 +83,6 @@ class LanguageCloudProjectSettingsForm(WagtailAdminModelForm):
             initial=get_default_project_template_id(),
             widget=forms.Select(),
         )
-
-    @classproperty
-    def default_due_date(self):
-        now = timezone.now()
-        delta = settings.WAGTAILLOCALIZE_RWS_LANGUAGECLOUD.get(
-            "DUE_BY_DELTA", datetime.timedelta(days=7)
-        )
-        return now + delta
 
     def clean_due_date(self):
         due_date = self.cleaned_data["due_date"]
