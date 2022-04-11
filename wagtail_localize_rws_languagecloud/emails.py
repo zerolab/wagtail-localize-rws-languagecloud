@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.template import Context, Template
+from django.template import loader
 from django.utils.translation import gettext_lazy
 from wagtail.admin.mail import send_mail
 
@@ -50,36 +50,20 @@ def send_update_translated_pages_emails(all_pages, updated_pages, skipped_pages)
         send_mail(subject, body, [recipient])
 
 
-UPDATE_TRANSLATED_PAGES_EMAIL_TEMPLATE = Template(
-    """{% load i18n %}
-{% blocktrans with total_count=all_pages|length updated_count=updated_pages|length skipped_count=skipped_pages|length %}
-Found {{ total_count }} page(s) with stale translations, of which {{ updated_count }} were synced and {{ skipped_count }} were skipped.{% endblocktrans %}
-
-{% trans "Pages that were synced:" %}
-
-{% for page_pk, page_title in updated_pages %}{{ forloop.counter }}. {{ page_title }}: {% url 'wagtailadmin_pages:edit' page_pk %}{% empty %}-
-{% endfor %}
-
-{% trans "Pages that were skipped because they had pending translations on RWS LanguageCloud:" %}
-
-{% for page_pk, page_title in skipped_pages %}{{ forloop.counter }}. {{ page_title }}: {{ base_url }}{% url 'wagtailadmin_pages:edit' page_pk %}{% empty %}-{% endfor %}
-"""
-)
-
-
 def compose_update_translated_pages_email(all_pages, updated_pages, skipped_pages):
     subject = gettext_lazy("Translated pages have been synced")
 
-    context = Context(
-        {
-            "all_pages": all_pages,
-            "updated_pages": updated_pages,
-            "skipped_pages": skipped_pages,
-            "base_url": getattr(settings, "BASE_URL", ""),
-        }
-    )
+    context = {
+        "all_pages": all_pages,
+        "updated_pages": updated_pages,
+        "skipped_pages": skipped_pages,
+        "base_url": getattr(settings, "BASE_URL", ""),
+    }
 
-    body = UPDATE_TRANSLATED_PAGES_EMAIL_TEMPLATE.render(context)
+    body = loader.render_to_string(
+        "wagtail_localize_rws_languagecloud/emails/update_translated_pages.txt",
+        context,
+    )
 
     return subject, body
 

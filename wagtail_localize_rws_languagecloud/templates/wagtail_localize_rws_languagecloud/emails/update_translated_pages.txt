@@ -1,0 +1,11 @@
+{% load i18n %}{% blocktrans with total_count=all_pages|length updated_count=updated_pages|length skipped_count=skipped_pages|length %}
+Found {{ total_count }} page(s) with stale translations, of which {{ updated_count }} were synced and {{ skipped_count }} were skipped.{% endblocktrans %}
+
+{% trans "Pages that were synced:" %}
+
+{% for page_pk, page_title in updated_pages %}{{ forloop.counter }}. {{ page_title }}: {% url 'wagtailadmin_pages:edit' page_pk %}{% empty %}-
+{% endfor %}
+
+{% trans "Pages that were skipped because they had pending translations on RWS LanguageCloud:" %}
+
+{% for page_pk, page_title in skipped_pages %}{{ forloop.counter }}. {{ page_title }}: {{ base_url }}{% url 'wagtailadmin_pages:edit' page_pk %}{% empty %}-{% endfor %}
