@@ -112,6 +112,8 @@ class Command(BaseCommand):
                 translation_source=source,
                 translations=enabled_translations,
                 name=get_default_project_name_prefix(),
+                # Prefix with "Wagtail" because we don't have a user to
+                # pass into get_default_project_description.
                 description="Wagtail\n" + get_default_project_description(source),
                 due_date=get_default_due_date(),
                 template_id=get_default_project_template_id(),
