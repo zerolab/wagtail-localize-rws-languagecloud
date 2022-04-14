@@ -90,12 +90,12 @@ class TestEmails(TestCase):
 
     @mock.patch("wagtail_localize_rws_languagecloud.emails.send_mail")
     def test_send_email(self, send_mail):
-        emails.send_emails(self.translation)
+        emails.send_sync_rws_emails(self.translation)
         self.assertEqual(send_mail.call_count, 2)
 
     @override_settings(BASE_URL="https://foobar.com")
     def test_compose_email(self):
-        _, body = emails.compose_email(self.translation)
+        _, body = emails.compose_sync_rws_email(self.translation)
         self.assertIn(
             "https://foobar.com" + self.translation.get_target_instance_edit_url(), body
         )

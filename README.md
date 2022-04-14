@@ -70,19 +70,55 @@ This allows users of [RWS LanguageCloud](https://www.rws.com/translation/languag
    ./manage.py migrate
    ```
 
-## Synchronisation
+## Exporting and importing content to/from LanguageCloud
 
-This plugin uses a background job to:
+This plugin works by:
 
-- Identify text in wagtail which is pending localization and export it to LanguageCloud
-- Identify completed projects in LanguageCloud and import the localized content back into Wagtail
+- Identifying text in Wagtail which is pending localization and exporting it to LanguageCloud
+- Identifying completed projects in LanguageCloud and importing the localized content back into Wagtail
 
-This is done using a management command `./manage.py sync_rws`.
+This is done through a management command:
 
-This can be run on a regular basis using a scheduler like cron. We recommend an interval of about every 10 minutes. It is desirable to prevent more than one copy of the sync command from running at the same time.
+```
+./manage.py sync_rws
+```
+
+This command needs to be run on an interval using a scheduler like cron. We recommend an interval of about every 10 minutes.
+
+It is desirable to prevent more than one copy of the sync command from running at the same time.
 
 - If using cron as a scheduler, [lockrun](http://unixwiz.net/tools/lockrun.html) can be used to prevent multiple instance of the same job running simultaneously.
 - If using a queue-based scheduler like Celery Beat, the `SyncManager` class contains `is_queued` and `is_running` extension points which could be used to implement a lock strategy.
+
+## Update translated pages
+
+Wagtail Localize comes with a feature called "Sync translated pages" which copies untranslated content from the source page to its translated pages. This is useful when the source page content has been updated and needs to be copied and re-translated.
+
+This plugin comes with an optional management command that automates this process by running sync translated pages on pages with stale translated content.
+
+```
+./manage.py update_translated_pages
+```
+
+This command:
+
+- Runs "sync translated pages" on pages that have been published but not yet synced.
+- Queues these pages to be translated on LanguageCloud using the default settings.
+- Sends an email summary with the list of pages that were synced or skipped.
+
+Pages that match the following criteria are excluded from auto-syncing:
+
+- Pages that haven't been translated before.
+- Pages that have pending translations on LanguageCloud.
+
+You can use this command ad-hoc, or schedule it to run on an interval to automatically keep translated versions of your content up-to-date.
+
+You can safely preview which pages will be affected without actually updating them by running the command with `--dry-run`.
+
+```
+./manage.py update_translated_pages --dry-run
+
+```
 
 ## Signals
 

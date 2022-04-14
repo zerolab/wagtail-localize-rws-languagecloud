@@ -11,7 +11,13 @@ from freezegun import freeze_time
 from wagtail.admin.edit_handlers import get_form_for_model
 from wagtail.tests.utils import WagtailTestUtils
 
-from wagtail_localize_rws_languagecloud.forms import LanguageCloudProjectSettingsForm
+from wagtail_localize_rws_languagecloud.forms import (
+    LanguageCloudProjectSettingsForm,
+    get_default_due_date,
+    get_default_project_description,
+    get_default_project_name_prefix,
+    get_default_project_template_id,
+)
 from wagtail_localize_rws_languagecloud.models import LanguageCloudProjectSettings
 
 from .helpers import create_test_page
@@ -52,7 +58,7 @@ class TestProjectSettingsForm(TestCase, WagtailTestUtils):
 
     def test_get_project_name_without_custom_prefix(self):
         self.assertEqual(
-            self.form.default_project_name_prefix,
+            get_default_project_name_prefix(),
             "2018-02-02_",
         )
 
@@ -61,13 +67,13 @@ class TestProjectSettingsForm(TestCase, WagtailTestUtils):
     )
     def test_get_project_name_with_custom_prefix(self):
         self.assertEqual(
-            self.form.default_project_name_prefix,
+            get_default_project_name_prefix(),
             "Website_2018-02-02_",
         )
 
     def test_get_project_due_date_without_custom_delta(self):
         self.assertEqual(
-            self.form.default_due_date,
+            get_default_due_date(),
             datetime.datetime(2018, 2, 9, 12, 0, 1, tzinfo=pytz.utc),
         )
 
@@ -76,13 +82,13 @@ class TestProjectSettingsForm(TestCase, WagtailTestUtils):
     )
     def test_get_project_due_date_with_custom_delta(self):
         self.assertEqual(
-            self.form.default_due_date,
+            get_default_due_date(),
             datetime.datetime(2018, 2, 16, 12, 0, 1, tzinfo=pytz.utc),
         )
 
     def test_get_default_project_description(self):
         self.assertEqual(
-            self.form._get_default_project_description(self.test_page),
+            get_default_project_description(self.test_page),
             self.test_page.full_url,
         )
 
@@ -90,18 +96,18 @@ class TestProjectSettingsForm(TestCase, WagtailTestUtils):
         user = self.create_test_user()
         self.assertIn(
             "test@email.com",
-            self.form._get_default_project_description(self.test_page, user=user),
+            get_default_project_description(self.test_page, user=user),
         )
         user.first_name = "John"
         user.last_name = "Doe"
         user.save()
         self.assertIn(
             "John Doe",
-            self.form._get_default_project_description(self.test_page, user=user),
+            get_default_project_description(self.test_page, user=user),
         )
 
     def test_get_default_project_template(self):
-        self.assertEqual(self.form.default_project_template_id, "c0ffee")
+        self.assertEqual(get_default_project_template_id(), "c0ffee")
 
     def test_user_field_is_hidden(self):
         self.assertIsInstance(self.form.fields["user"].widget, forms.HiddenInput)
