@@ -1,0 +1,13 @@
+/* These styles change the locale selector to be stacked vertically so that it
+ * looks better with the translation status.  */
+.c-dropdown__menu > * ~ * {
+    margin: 0.75em 0 !important;
+}
+
+.c-dropdown__item {
+    float: none !important;
+}
+
+.c-dropdown__item:first-child {
+    margin: 0 !important;
+}

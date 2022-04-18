@@ -1,0 +1,15 @@
+{% extends "wagtail_localize/admin/edit_translation.html" %}
+{% load wagtailadmin_tags wagtaillocalizerwslanguagecloud_tags %}
+
+{% block content %}
+  {# Hijack Wagtail Localize props #}
+  <div class="js-translation-editor" data-props="{% hijack_wagtail_localize_edit_translation_props props %}">
+        {# Generates the CSRF token hidden input. This is read by the JavaScript. #}
+        {% csrf_token %}
+    </div>
+{% endblock %}
+
+{% block extra_css %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% versioned_static 'wagtail_localize_rws_languagecloud/css/wagtail-localize-overrides.css' %}" type="text/css">
+{% endblock %}
