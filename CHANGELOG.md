@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Add new `update_translated_pages` management command
+- Display translation status in locale selector
 
 ## [0.7.2] - 2022-03-24
 
