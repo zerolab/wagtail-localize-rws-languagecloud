@@ -2,7 +2,7 @@ from django.conf import settings
 from django.db import models
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy
-from wagtail.core.models import Page
+from wagtail.core.models import Page, PageRevision
 
 from wagtail_localize.components import register_translation_component
 from wagtail_localize.models import Translation, TranslationSource
@@ -95,6 +95,12 @@ class LanguageCloudFile(StatusModel):
     project = models.ForeignKey(LanguageCloudProject, on_delete=models.CASCADE)
     lc_source_file_id = models.CharField(blank=True, max_length=255)
     create_attempts = models.IntegerField(default=0)
+    revision = models.ForeignKey(
+        PageRevision,
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+    )
 
     class Meta:
         unique_together = [
@@ -111,11 +117,41 @@ class LanguageCloudFile(StatusModel):
         return self.lc_source_file_id == "" and self.create_attempts >= 3
 
     @property
-    def instance_is_published(self):
+    def published_status(self):
+        PUBLISHED = gettext_lazy("Translations published")
+        RECEIVED = gettext_lazy("Translations received")
+        READY_TO_REVIEW = gettext_lazy("Translations ready for review")
+
         instance = self.translation.get_target_instance()
+
         if not isinstance(instance, Page):
-            return True
-        return not instance.has_unpublished_changes
+            # snippets are always published immediately
+            return PUBLISHED
+
+        if not self.revision:
+            """
+            There's a couple of reasons we can end up here:
+            1. For legacy reasons: we didn't always save a revision on this object.
+               Objects created with <=0.8.0 willl have a NULL revision
+            2. If we threw an error trying to call save_target() in import_po()
+
+            In this case, say we've got the translations back
+            but we don't know if they are published or not
+            """
+            return RECEIVED
+
+        if (
+            self.revision == instance.get_latest_revision()
+            and not instance.has_unpublished_changes
+        ):
+            return PUBLISHED
+
+        if (self.revision != instance.get_latest_revision()) and (
+            self.revision.created_at < instance.get_latest_revision().created_at
+        ):
+            return PUBLISHED
+
+        return READY_TO_REVIEW
 
     @property
     def combined_status(self):
@@ -134,17 +170,8 @@ class LanguageCloudFile(StatusModel):
         if self.project.lc_project_status == LanguageCloudStatus.ARCHIVED:
             return gettext_lazy("LanguageCloud project archived")
 
-        if (
-            self.internal_status == LanguageCloudFile.STATUS_IMPORTED
-            and not self.instance_is_published
-        ):
-            return gettext_lazy("Translations ready for review")
-
-        if (
-            self.internal_status == LanguageCloudFile.STATUS_IMPORTED
-            and self.instance_is_published
-        ):
-            return gettext_lazy("Translations published")
+        if self.internal_status == LanguageCloudFile.STATUS_IMPORTED:
+            return self.published_status
 
         if self.internal_status == LanguageCloudFile.STATUS_ERROR:
             return gettext_lazy("Error importing PO file")
