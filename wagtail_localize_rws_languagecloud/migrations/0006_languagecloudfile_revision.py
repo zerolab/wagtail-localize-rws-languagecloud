@@ -7,7 +7,6 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("wagtailcore", "0066_collection_management_permissions"),
         ("wagtail_localize_rws_languagecloud", "0005_languagecloudprojectsettings"),
     ]
 
