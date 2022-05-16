@@ -140,16 +140,19 @@ class LanguageCloudFile(StatusModel):
             """
             return RECEIVED
 
-        if (
-            self.revision == instance.get_latest_revision()
-            and not instance.has_unpublished_changes
-        ):
+        if self.revision == instance.live_revision:
+            # The PageRevision attached to this LanguageCloudFile is published
             return PUBLISHED
 
-        if (self.revision != instance.get_latest_revision()) and (
-            self.revision.created_at < instance.get_latest_revision().created_at
-        ):
-            return PUBLISHED
+        recent_revisions = (
+            instance.revisions.all()
+            .filter(created_at__gt=self.revision.created_at)
+            .order_by("-created_at", "-id")
+        )
+        for revision in recent_revisions:
+            if revision == instance.live_revision:
+                # Some other more recent PageRevision is published
+                return PUBLISHED
 
         return READY_TO_REVIEW
 
