@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.1] - 2022-05-17
+
+### Fixed
+
+Fixed bug with 'ready for review' and 'published' status values in the
+LanguageCloud Report View. Note this fix depends on attaching a revision to
+the `LanguageCloudFile` object at the point translations are imported.
+This fix will apply to any new objects but any `LanguageCloudFile` objects
+created using version <= 0.8.0 will be shown as a generic 'received' status
+rather than 'ready for review' or 'published'.
+
 ## [0.8.0] - 2022-04-19
 
 ### Changed
