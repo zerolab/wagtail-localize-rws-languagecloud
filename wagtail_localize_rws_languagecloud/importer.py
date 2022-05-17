@@ -1,6 +1,10 @@
 import polib
 
-from django.core.exceptions import SuspiciousOperation, ValidationError
+from django.core.exceptions import (
+    ObjectDoesNotExist,
+    SuspiciousOperation,
+    ValidationError,
+)
 from django.db import transaction
 from wagtail.core.models import Page
 
@@ -72,4 +76,15 @@ class Importer:
             )
 
         self.db_source_file.internal_status = LanguageCloudFile.STATUS_IMPORTED
+
+        try:
+            instance = translation.get_target_instance()
+            if isinstance(instance, Page):
+                self.db_source_file.revision = instance.get_latest_revision()
+        except ObjectDoesNotExist:
+            # we will hit this case if we failed with a
+            # `MissingRelatedObjectError` or `ValidationError`
+            # trying to call `save_target()` a few lines up
+            pass
+
         self.db_source_file.save()

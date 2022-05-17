@@ -76,7 +76,18 @@ class TestLanguageCloudFileCombinedStatus(TestCase):
         self.file.save()
         self.assertEqual(self.file.combined_status, "Translations ready for review")
 
-    def test_translations_published(self):
+    def test_translations_no_revision(self):
+        self.project.lc_project_id = "12345"
+        self.file.lc_source_file_id = "67890"
+        self.file.internal_status = LanguageCloudFile.STATUS_IMPORTED
+        importer = Importer(self.file, logging.getLogger("dummy"))
+        importer.import_po(self.translation, str(self.po_file))
+        self.project.save()
+        self.file.revision = None
+        self.file.save()
+        self.assertEqual(self.file.combined_status, "Translations received")
+
+    def test_translations_published_directly(self):
         self.project.lc_project_id = "12345"
         self.file.lc_source_file_id = "67890"
         self.file.internal_status = LanguageCloudFile.STATUS_IMPORTED
@@ -85,11 +96,41 @@ class TestLanguageCloudFileCombinedStatus(TestCase):
         instance = self.translation.source.get_translated_instance(
             self.translation.target_locale
         )
-        instance.get_latest_revision().publish()
+        instance.get_latest_revision().publish()  # publish the translated revision directly
         self.project.save()
         self.file.save()
         self.translation.save()
         self.assertEqual(self.file.combined_status, "Translations published")
+
+    def test_translations_published_with_edits(self):
+        self.project.lc_project_id = "12345"
+        self.file.lc_source_file_id = "67890"
+        self.file.internal_status = LanguageCloudFile.STATUS_IMPORTED
+        importer = Importer(self.file, logging.getLogger("dummy"))
+        importer.import_po(self.translation, str(self.po_file))
+        instance = self.translation.source.get_translated_instance(
+            self.translation.target_locale
+        )
+        instance.save_revision().publish()  # save a new revision and publish that
+        self.project.save()
+        self.file.save()
+        self.translation.save()
+        self.assertEqual(self.file.combined_status, "Translations published")
+
+    def test_translations_not_yet_published_with_later_edits(self):
+        self.project.lc_project_id = "12345"
+        self.file.lc_source_file_id = "67890"
+        self.file.internal_status = LanguageCloudFile.STATUS_IMPORTED
+        importer = Importer(self.file, logging.getLogger("dummy"))
+        importer.import_po(self.translation, str(self.po_file))
+        instance = self.translation.source.get_translated_instance(
+            self.translation.target_locale
+        )
+        instance.save_revision()  # save a new revision, but don't publish it yet
+        self.project.save()
+        self.file.save()
+        self.translation.save()
+        self.assertEqual(self.file.combined_status, "Translations ready for review")
 
     def test_project_create_failed(self):
         self.project.create_attempts = 3
