@@ -12,25 +12,26 @@ from wagtail_localize.models import (
     Translation,
     TranslationSource,
 )
-from wagtail_localize.test.models import TestPage, TestSnippet
+from wagtail_localize_rws_languagecloud.test.models import ExampleSnippet, TestPage
 
 from ..importer import Importer
 from .helpers import create_test_page, create_test_po
 
 
 class TestImporter(TestCase):
-    def setUp(self):
-        self.page, self.source = create_test_page(
+    @classmethod
+    def setUpTestData(cls):
+        cls.page, cls.source = create_test_page(
             title="Test page",
             slug="test-page",
             test_charfield="The test translatable field",
             test_synchronized_charfield="The test synchronized field",
             test_textfield="The other test translatable field",
         )
-        self.locale = Locale.objects.create(language_code="fr")
-        self.translation = Translation.objects.create(
-            source=self.source,
-            target_locale=self.locale,
+        cls.locale = Locale.objects.create(language_code="fr")
+        cls.translation = Translation.objects.create(
+            source=cls.source,
+            target_locale=cls.locale,
         )
 
     def test_importer_page(self):
@@ -96,12 +97,12 @@ class TestImporter(TestCase):
         self.assertIn("Translated with RWS", string_translations[0].get_comment())
 
     def test_importer_snippet(self):
-        snippet = TestSnippet.objects.create(field="Test snippet")
+        snippet = ExampleSnippet.objects.create(name="Test snippet")
         source, created = TranslationSource.get_or_create_from_instance(snippet)
         po = create_test_po(
             [
                 (
-                    "field",
+                    "name",
                     "Test snippet",
                     "Extrait de test",
                 )
@@ -117,9 +118,9 @@ class TestImporter(TestCase):
         importer.import_po(translation, str(po))
 
         # Check translated snippet
-        translated_snippet = TestSnippet.objects.get(locale=self.locale)
+        translated_snippet = ExampleSnippet.objects.get(locale=self.locale)
         self.assertEqual(translated_snippet.translation_key, snippet.translation_key)
-        self.assertEqual(translated_snippet.field, "Extrait de test")
+        self.assertEqual(translated_snippet.name, "Extrait de test")
 
         self.assertEqual(file_mock.save.call_count, 1)
 

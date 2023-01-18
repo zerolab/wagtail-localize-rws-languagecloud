@@ -8,9 +8,8 @@ from django.utils import timezone
 from wagtail.core.models import Page
 
 from wagtail_localize.models import TranslationSource
-from wagtail_localize.test.models import TestPage
 from wagtail_localize_rws_languagecloud.models import LanguageCloudProjectSettings
-from wagtail_localize_rws_languagecloud.test.models import ExampleSnippet
+from wagtail_localize_rws_languagecloud.test.models import ExampleSnippet, TestPage
 
 
 User = get_user_model()
