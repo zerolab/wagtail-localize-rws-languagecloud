@@ -4,7 +4,12 @@ from django.core.management import call_command
 from django.test import TestCase
 from django.test.utils import override_settings
 from django.utils import timezone
-from wagtail.core.models import Locale
+
+
+try:
+    from wagtail.models import Locale
+except ImportError:
+    from wagtail.core.models import Locale
 
 from wagtail_localize.models import Translation
 
@@ -22,33 +27,36 @@ from .helpers import create_editor_user, create_test_page
     }
 )
 class TestUpdateTranslatedPages(TestCase):
-    def setUp(self):
-        self.locale_en = Locale.objects.get(language_code="en")
-        self.locale_fr = Locale.objects.create(language_code="fr")
-        self.locale_de = Locale.objects.create(language_code="de")
-        self.user = create_editor_user()
-        self.client.force_login(self.user)
+    @classmethod
+    def setUpTestData(cls):
+        cls.locale_en = Locale.objects.get(language_code="en")
+        cls.locale_fr = Locale.objects.create(language_code="fr")
+        cls.locale_de = Locale.objects.create(language_code="de")
+        cls.user = create_editor_user()
 
         # First make a page
-        self.page, self.source = create_test_page(
+        cls.page, cls.source = create_test_page(
             title="Test page",
             slug="test-page",
             test_charfield="Some test translatable content",
         )
-        self.page.last_published_at = timezone.now()
-        self.page.save()
+        cls.page.last_published_at = timezone.now()
+        cls.page.save()
 
         # Then translate it into the other languages
-        self.fr_translation = Translation.objects.create(
-            source=self.source,
-            target_locale=self.locale_fr,
+        cls.fr_translation = Translation.objects.create(
+            source=cls.source,
+            target_locale=cls.locale_fr,
         )
-        self.fr_translation.save_target(publish=True)
-        self.de_translation = Translation.objects.create(
-            source=self.source,
-            target_locale=self.locale_de,
+        cls.fr_translation.save_target(publish=True)
+        cls.de_translation = Translation.objects.create(
+            source=cls.source,
+            target_locale=cls.locale_de,
         )
-        self.de_translation.save_target(publish=True)
+        cls.de_translation.save_target(publish=True)
+
+    def setUp(self):
+        self.client.force_login(self.user)
 
     def test_should_create_language_cloud_project(self):
         call_command("update_translated_pages")

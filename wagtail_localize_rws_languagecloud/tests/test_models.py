@@ -2,7 +2,12 @@ import datetime
 import logging
 
 from django.test import TestCase
-from wagtail.core.models import Locale
+
+
+try:
+    from wagtail.models import Locale
+except ImportError:
+    from wagtail.core.models import Locale
 
 from wagtail_localize.models import Translation
 
@@ -17,19 +22,20 @@ from .helpers import create_test_page, create_test_po
 
 
 class TestLanguageCloudFileCombinedStatus(TestCase):
-    def setUp(self):
-        self.locale_fr = Locale.objects.create(language_code="fr")
+    @classmethod
+    def setUpTestData(cls):
+        cls.locale_fr = Locale.objects.create(language_code="fr")
         _, source = create_test_page(
             title="Test page",
             slug="test-page",
             test_charfield="Some test translatable content",
         )
 
-        self.translation = Translation.objects.create(
-            source=source, target_locale=self.locale_fr
+        cls.translation = Translation.objects.create(
+            source=source, target_locale=cls.locale_fr
         )
-        self.translation.save_target()
-        self.po_file = create_test_po(
+        cls.translation.save_target()
+        cls.po_file = create_test_po(
             [
                 (
                     "test_charfield",
@@ -39,14 +45,14 @@ class TestLanguageCloudFileCombinedStatus(TestCase):
             ]
         )
 
-        self.project = LanguageCloudProject.objects.create(
+        cls.project = LanguageCloudProject.objects.create(
             translation_source=source,
             source_last_updated_at=source.last_updated_at,
             internal_status=LanguageCloudProject.STATUS_NEW,
         )
-        self.file = LanguageCloudFile.objects.create(
-            translation=self.translation,
-            project=self.project,
+        cls.file = LanguageCloudFile.objects.create(
+            translation=cls.translation,
+            project=cls.project,
             internal_status=LanguageCloudFile.STATUS_NEW,
         )
 
@@ -164,18 +170,19 @@ class TestLanguageCloudFileCombinedStatus(TestCase):
 
 
 class TestLanguageCloudProjectSettings(TestCase):
-    def setUp(self):
-        self.locale_fr = Locale.objects.create(language_code="fr")
-        self.page, self.source = create_test_page(
+    @classmethod
+    def setUpTestData(cls):
+        cls.locale_fr = Locale.objects.create(language_code="fr")
+        cls.page, cls.source = create_test_page(
             title="Test page",
             slug="test-page",
             test_charfield="Some test translatable content",
         )
 
-        self.translation = Translation.objects.create(
-            source=self.source, target_locale=self.locale_fr
+        cls.translation = Translation.objects.create(
+            source=cls.source, target_locale=cls.locale_fr
         )
-        self.translation.save_target()
+        cls.translation.save_target()
 
     def test_settings_creation_includes_source_title(self):
         settings_data = {"name": "the prefix", "due_date": datetime.datetime.now()}

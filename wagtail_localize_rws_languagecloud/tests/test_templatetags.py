@@ -2,7 +2,12 @@ from datetime import date
 
 from django.test import TestCase
 from django.urls import reverse
-from wagtail.core.models import Locale
+
+
+try:
+    from wagtail.models import Locale
+except ImportError:
+    from wagtail.core.models import Locale
 
 from wagtail_localize.models import Translation
 
@@ -17,16 +22,15 @@ from .helpers import (
 
 
 class TestTranslationStatusesTags(TestCase):
-    def setUp(self):
-        user = create_editor_user()
-        self.client.force_login(user)
-
-        self.locale_en = Locale.objects.get(language_code="en")
-        self.locale_fr = Locale.objects.create(language_code="fr")
-        self.locale_es = Locale.objects.create(language_code="es")
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = create_editor_user()
+        cls.locale_en = Locale.objects.get(language_code="en")
+        cls.locale_fr = Locale.objects.create(language_code="fr")
+        cls.locale_es = Locale.objects.create(language_code="es")
 
         # First make a page
-        self.page, source = create_test_page(
+        cls.page, source = create_test_page(
             title="Test page",
             slug="test-page",
             test_charfield="Some test translatable content",
@@ -41,18 +45,18 @@ class TestTranslationStatusesTags(TestCase):
         # Then translate it into the other languages
         fr_translation = Translation.objects.create(
             source=source,
-            target_locale=self.locale_fr,
+            target_locale=cls.locale_fr,
         )
         fr_translation.save_target(publish=True)
         es_translation = Translation.objects.create(
             source=source,
-            target_locale=self.locale_es,
+            target_locale=cls.locale_es,
         )
         es_translation.save_target(publish=True)
 
-        self.projects = []
-        self.fr_lc_files = []
-        self.es_lc_files = []
+        cls.projects = []
+        cls.fr_lc_files = []
+        cls.es_lc_files = []
 
         # Simulate sending the translation to language cloud multiple times
         for date_ in dates:
@@ -62,7 +66,7 @@ class TestTranslationStatusesTags(TestCase):
                 internal_status=LanguageCloudProject.STATUS_NEW,
                 lc_project_id=f"proj_{date_}",
             )
-            self.projects.append(project)
+            cls.projects.append(project)
 
             fr_lc_file = LanguageCloudFile.objects.create(
                 translation=fr_translation,
@@ -71,7 +75,7 @@ class TestTranslationStatusesTags(TestCase):
                 internal_status=LanguageCloudFile.STATUS_NEW,
             )
 
-            self.fr_lc_files.append(fr_lc_file)
+            cls.fr_lc_files.append(fr_lc_file)
 
             es_lc_file = LanguageCloudFile.objects.create(
                 translation=es_translation,
@@ -80,15 +84,19 @@ class TestTranslationStatusesTags(TestCase):
                 internal_status=LanguageCloudFile.STATUS_NEW,
             )
 
-            self.es_lc_files.append(es_lc_file)
+            cls.es_lc_files.append(es_lc_file)
 
-        latest_fr_lc_file = self.fr_lc_files[-1]
+        latest_fr_lc_file = cls.fr_lc_files[-1]
         latest_fr_lc_file.internal_status = "???"
         latest_fr_lc_file.save()
 
-        latest_es_lc_file = self.es_lc_files[-1]
+        latest_es_lc_file = cls.es_lc_files[-1]
         latest_es_lc_file.internal_status = LanguageCloudFile.STATUS_ERROR
         latest_es_lc_file.save()
+        cls
+
+    def setUp(self):
+        self.client.force_login(self.user)
 
     def test_translation_statuses_tag(self):
         page = self.page

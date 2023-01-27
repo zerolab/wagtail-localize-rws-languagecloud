@@ -2,7 +2,12 @@ from django.test import TestCase
 from django.test.utils import override_settings
 from django.urls import reverse
 from django.utils import timezone
-from wagtail.core.models import Locale
+
+
+try:
+    from wagtail.models import Locale
+except ImportError:
+    from wagtail.core.models import Locale
 
 from wagtail_localize.models import Translation
 
@@ -18,15 +23,15 @@ from .helpers import create_editor_user, create_test_page
     },
 )
 class TestUpdateTranslationsOverride(TestCase):
-    def setUp(self):
-        self.locale_en = Locale.objects.get(language_code="en")
-        self.locale_fr = Locale.objects.create(language_code="fr")
-        self.locale_de = Locale.objects.create(language_code="de")
-        self.user = create_editor_user()
-        self.client.force_login(self.user)
+    @classmethod
+    def setUpTestData(cls):
+        cls.locale_en = Locale.objects.get(language_code="en")
+        cls.locale_fr = Locale.objects.create(language_code="fr")
+        cls.locale_de = Locale.objects.create(language_code="de")
+        cls.user = create_editor_user()
 
         # First make a page
-        self.page, self.source = create_test_page(
+        cls.page, cls.source = create_test_page(
             title="Test page",
             slug="test-page",
             test_charfield="Some test translatable content",
@@ -34,19 +39,19 @@ class TestUpdateTranslationsOverride(TestCase):
 
         # Then translate it into the other languages
         fr_translation = Translation.objects.create(
-            source=self.source,
-            target_locale=self.locale_fr,
+            source=cls.source,
+            target_locale=cls.locale_fr,
         )
         fr_translation.save_target(publish=True)
         de_translation = Translation.objects.create(
-            source=self.source,
-            target_locale=self.locale_de,
+            source=cls.source,
+            target_locale=cls.locale_de,
         )
         de_translation.save_target(publish=True)
 
         # Simulate sending the translation to language cloud
-        self.project = LanguageCloudProject.objects.create(
-            translation_source=self.source,
+        cls.project = LanguageCloudProject.objects.create(
+            translation_source=cls.source,
             source_last_updated_at=timezone.now(),
             internal_status=LanguageCloudProject.STATUS_NEW,
             lc_project_id="proj",
@@ -54,17 +59,20 @@ class TestUpdateTranslationsOverride(TestCase):
 
         LanguageCloudFile.objects.create(
             translation=fr_translation,
-            project=self.project,
+            project=cls.project,
             lc_source_file_id="file_fr",
             internal_status=LanguageCloudFile.STATUS_NEW,
         )
 
         LanguageCloudFile.objects.create(
             translation=de_translation,
-            project=self.project,
+            project=cls.project,
             lc_source_file_id="file_de",
             internal_status=LanguageCloudFile.STATUS_NEW,
         )
+
+    def setUp(self):
+        self.client.force_login(self.user)
 
     def test_should_show_unable_to_update_translations_message(self):
         statuses = [

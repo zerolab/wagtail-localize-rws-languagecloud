@@ -1,8 +1,13 @@
 from django.contrib.auth.models import Group, Permission
 from django.test import TestCase
 from django.urls.base import reverse
-from wagtail.core.models import Locale
 from wagtail.tests.utils import WagtailTestUtils
+
+
+try:
+    from wagtail.models import Locale
+except ImportError:
+    from wagtail.core.models import Locale
 
 from wagtail_localize.models import Translation
 
@@ -14,23 +19,28 @@ from .helpers import (
 )
 
 
-class TestPageEditTranslateButton(TestCase, WagtailTestUtils):
-    def setUp(self):
-        self.editor_user = create_editor_user()
-        self.locale_fr = Locale.objects.create(language_code="fr")
-        self.locale_de = Locale.objects.create(language_code="de")
-        self.client.force_login(self.editor_user)
+class TestPageEditTranslateButton(WagtailTestUtils, TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.editor_user = create_editor_user()
+        cls.locale_fr = Locale.objects.create(language_code="fr")
+        cls.locale_de = Locale.objects.create(language_code="de")
 
-        self.test_page, source = create_test_page(
+        cls.test_page, source = create_test_page(
             title="Test page",
             slug="test-page",
             test_charfield="Some test translatable content",
         )
 
-    def test_translate_button_in_action_menu(self):
-        resp = self.client.get(
-            reverse("wagtailadmin_pages:edit", args=[self.test_page.pk])
+        cls.test_page_edit_url = reverse(
+            "wagtailadmin_pages:edit", args=[cls.test_page.pk]
         )
+
+    def setUp(self):
+        self.client.force_login(self.editor_user)
+
+    def test_translate_button_in_action_menu(self):
+        resp = self.client.get(self.test_page_edit_url)
 
         self.assertContains(
             resp,
@@ -42,9 +52,7 @@ class TestPageEditTranslateButton(TestCase, WagtailTestUtils):
         group = Group.objects.get(name="Editors")
         group.permissions.remove(Permission.objects.get(codename="submit_translation"))
 
-        resp = self.client.get(
-            reverse("wagtailadmin_pages:edit", args=[self.test_page.pk])
-        )
+        resp = self.client.get(self.test_page_edit_url)
 
         self.assertNotContains(
             resp, f'href="/admin/localize/submit/page/{self.test_page.pk}/"'
@@ -55,9 +63,7 @@ class TestPageEditTranslateButton(TestCase, WagtailTestUtils):
         self.locale_fr.delete()
         self.locale_de.delete()
 
-        resp = self.client.get(
-            reverse("wagtailadmin_pages:edit", args=[self.test_page.pk])
-        )
+        resp = self.client.get(self.test_page_edit_url)
 
         self.assertNotContains(
             resp, f'href="/admin/localize/submit/page/{self.test_page.pk}/"'
@@ -65,14 +71,14 @@ class TestPageEditTranslateButton(TestCase, WagtailTestUtils):
         self.assertNotContains(resp, "Translate this page")
 
 
-class TestPageEditSyncTranslationsButton(TestCase, WagtailTestUtils):
-    def setUp(self):
-        self.editor_user = create_editor_user()
-        self.locale_fr = Locale.objects.create(language_code="fr")
-        self.locale_de = Locale.objects.create(language_code="de")
-        self.client.force_login(self.editor_user)
+class TestPageEditSyncTranslationsButton(WagtailTestUtils, TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.editor_user = create_editor_user()
+        cls.locale_fr = Locale.objects.create(language_code="fr")
+        cls.locale_de = Locale.objects.create(language_code="de")
 
-        self.test_page, self.test_page_source = create_test_page(
+        cls.test_page, cls.test_page_source = create_test_page(
             title="Test page",
             slug="test-page",
             test_charfield="Some test translatable content",
@@ -80,16 +86,21 @@ class TestPageEditSyncTranslationsButton(TestCase, WagtailTestUtils):
 
         # Create translations for test page
         Translation.objects.create(
-            source=self.test_page_source, target_locale=self.locale_fr
+            source=cls.test_page_source, target_locale=cls.locale_fr
         )
         Translation.objects.create(
-            source=self.test_page_source, target_locale=self.locale_de
+            source=cls.test_page_source, target_locale=cls.locale_de
         )
 
-    def test_sync_button_in_action_menu(self):
-        resp = self.client.get(
-            reverse("wagtailadmin_pages:edit", args=[self.test_page.pk])
+        cls.test_page_edit_url = reverse(
+            "wagtailadmin_pages:edit", args=[cls.test_page.pk]
         )
+
+    def setUp(self):
+        self.client.force_login(self.editor_user)
+
+    def test_sync_button_in_action_menu(self):
+        resp = self.client.get(self.test_page_edit_url)
 
         self.assertContains(
             resp,
@@ -101,9 +112,7 @@ class TestPageEditSyncTranslationsButton(TestCase, WagtailTestUtils):
         group = Group.objects.get(name="Editors")
         group.permissions.remove(Permission.objects.get(codename="submit_translation"))
 
-        resp = self.client.get(
-            reverse("wagtailadmin_pages:edit", args=[self.test_page.pk])
-        )
+        resp = self.client.get(self.test_page_edit_url)
 
         self.assertNotContains(
             resp,
@@ -115,9 +124,7 @@ class TestPageEditSyncTranslationsButton(TestCase, WagtailTestUtils):
         self.locale_fr.delete()
         self.locale_de.delete()
 
-        resp = self.client.get(
-            reverse("wagtailadmin_pages:edit", args=[self.test_page.pk])
-        )
+        resp = self.client.get(self.test_page_edit_url)
 
         self.assertNotContains(
             resp,
@@ -126,8 +133,9 @@ class TestPageEditSyncTranslationsButton(TestCase, WagtailTestUtils):
         self.assertNotContains(resp, "Sync translated pages")
 
 
-class TestSnippetEditTranslateButton(TestCase, WagtailTestUtils):
-    def setUp(self):
+class TestSnippetEditTranslateButton(WagtailTestUtils, TestCase):
+    @classmethod
+    def setUpTestData(cls):
         group = Group.objects.get(name="Editors")
 
         # Add snippet permissions
@@ -141,15 +149,18 @@ class TestSnippetEditTranslateButton(TestCase, WagtailTestUtils):
             )
         )
 
-        self.editor_user = create_editor_user()
-        self.locale_fr = Locale.objects.create(language_code="fr")
-        self.locale_de = Locale.objects.create(language_code="de")
+        cls.editor_user = create_editor_user()
+        cls.locale_fr = Locale.objects.create(language_code="fr")
+        cls.locale_de = Locale.objects.create(language_code="de")
+
+        cls.test_snippet, source = create_snippet()
+        cls.test_snippet_edit_url = get_snippet_edit_url(cls.test_snippet)
+
+    def setUp(self):
         self.client.force_login(self.editor_user)
 
-        self.test_snippet, source = create_snippet()
-
     def test_translate_button_in_action_menu(self):
-        resp = self.client.get(get_snippet_edit_url(self.test_snippet))
+        resp = self.client.get(self.test_snippet_edit_url)
 
         self.assertContains(
             resp,
@@ -161,7 +172,7 @@ class TestSnippetEditTranslateButton(TestCase, WagtailTestUtils):
         group = Group.objects.get(name="Editors")
         group.permissions.remove(Permission.objects.get(codename="submit_translation"))
 
-        resp = self.client.get(get_snippet_edit_url(self.test_snippet))
+        resp = self.client.get(self.test_snippet_edit_url)
 
         self.assertNotContains(
             resp,
@@ -173,7 +184,7 @@ class TestSnippetEditTranslateButton(TestCase, WagtailTestUtils):
         self.locale_fr.delete()
         self.locale_de.delete()
 
-        resp = self.client.get(get_snippet_edit_url(self.test_snippet))
+        resp = self.client.get(self.test_snippet_edit_url)
 
         self.assertNotContains(
             resp,
@@ -182,8 +193,9 @@ class TestSnippetEditTranslateButton(TestCase, WagtailTestUtils):
         self.assertNotContains(resp, "Translate this snippet")
 
 
-class TestSnippetEditSyncTranslationsButton(TestCase, WagtailTestUtils):
-    def setUp(self):
+class TestSnippetEditSyncTranslationsButton(WagtailTestUtils, TestCase):
+    @classmethod
+    def setUpTestData(cls):
         group = Group.objects.get(name="Editors")
 
         # Add snippet permissions
@@ -197,23 +209,27 @@ class TestSnippetEditSyncTranslationsButton(TestCase, WagtailTestUtils):
             )
         )
 
-        self.editor_user = create_editor_user()
-        self.locale_fr = Locale.objects.create(language_code="fr")
-        self.locale_de = Locale.objects.create(language_code="de")
-        self.client.force_login(self.editor_user)
+        cls.editor_user = create_editor_user()
+        cls.locale_fr = Locale.objects.create(language_code="fr")
+        cls.locale_de = Locale.objects.create(language_code="de")
 
-        self.test_snippet, self.test_snippet_source = create_snippet()
+        cls.test_snippet, cls.test_snippet_source = create_snippet()
 
         # Create translations for test snippet
         Translation.objects.create(
-            source=self.test_snippet_source, target_locale=self.locale_fr
+            source=cls.test_snippet_source, target_locale=cls.locale_fr
         )
         Translation.objects.create(
-            source=self.test_snippet_source, target_locale=self.locale_de
+            source=cls.test_snippet_source, target_locale=cls.locale_de
         )
 
+        cls.test_snippet_edit_url = get_snippet_edit_url(cls.test_snippet)
+
+    def setUp(self):
+        self.client.force_login(self.editor_user)
+
     def test_sync_button_in_action_menu(self):
-        resp = self.client.get(get_snippet_edit_url(self.test_snippet))
+        resp = self.client.get(self.test_snippet_edit_url)
 
         self.assertContains(
             resp,
@@ -225,7 +241,7 @@ class TestSnippetEditSyncTranslationsButton(TestCase, WagtailTestUtils):
         group = Group.objects.get(name="Editors")
         group.permissions.remove(Permission.objects.get(codename="submit_translation"))
 
-        resp = self.client.get(get_snippet_edit_url(self.test_snippet))
+        resp = self.client.get(self.test_snippet_edit_url)
 
         self.assertNotContains(
             resp,
@@ -237,7 +253,7 @@ class TestSnippetEditSyncTranslationsButton(TestCase, WagtailTestUtils):
         self.locale_fr.delete()
         self.locale_de.delete()
 
-        resp = self.client.get(get_snippet_edit_url(self.test_snippet))
+        resp = self.client.get(self.test_snippet_edit_url)
 
         self.assertNotContains(
             resp,
