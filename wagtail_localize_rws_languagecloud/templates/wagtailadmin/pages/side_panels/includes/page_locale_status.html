@@ -1,0 +1,31 @@
+{% extends "wagtailadmin/pages/side_panels/includes/page_locale_status.html" %}
+{% load i18n wagtailadmin_tags wagtaillocalizerwslanguagecloud_tags %}
+
+<link rel="stylesheet" href="{% versioned_static 'wagtail_localize_rws_languagecloud/css/wagtail-localize-overrides.css' %}" type="text/css">
+
+{% block action %}
+    {% if translations %}
+        {% translation_statuses as translation_status_map %}
+        <div data-button-with-dropdown>
+            {% trans 'Switch locales' as action_text %}
+            {% include 'wagtailadmin/pages/side_panels/includes/side_panel_button.html' with text=action_text has_toggle=True %}
+
+            <div class="w-hidden w-text-white w-flex w-flex-col w-justify-start w-py-2" data-button-with-dropdown-content>
+                {% for translation in translations %}
+                    <a href="{{ translation.url }}"
+                        lang="{{ translation.locale.language_code }}"
+                        class="w-inline-flex w-items-center w-text-white hover:w-text-white hover:w-bg-primary-200 w-py-2 w-px-4 w-font-bold w-no-underline w-transition">
+                        {{ translation.locale.get_display_name }}
+                        {% for status_locale, status in translation_status_map %}
+                            {% if status_locale == translation.locale.pk %}
+                                ({{ status }})
+                            {% endif %}
+                        {% endfor %}
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+    {% else %}
+        {# No locales to switch to #}
+    {% endif %}
+{% endblock %}

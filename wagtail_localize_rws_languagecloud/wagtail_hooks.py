@@ -68,17 +68,17 @@ class TranslatePageMenuItem(ActionMenuItem):
     name = "action-translate"
     icon_name = "site"
 
-    def get_url(self, request, context):
+    def get_url(self, context):
         page = context["page"]
         return reverse("wagtail_localize:submit_page_translation", args=[page.pk])
 
-    def is_shown(self, request, context):
+    def is_shown(self, context):
         view = context["view"]
 
         if view == "edit":
             page = context["page"]
             if (
-                request.user.has_perm("wagtail_localize.submit_translation")
+                context["request"].user.has_perm("wagtail_localize.submit_translation")
                 and not page.is_root()
             ):
                 # If there's at least one locale that we haven't translated into yet, show "Translate this page" button
@@ -103,19 +103,19 @@ class SyncPageTranslationsMenuItem(ActionMenuItem):
     name = "action-sync-translations"
     icon_name = "repeat"
 
-    def get_url(self, request, context):
+    def get_url(self, context):
         page = context["page"]
         source = TranslationSource.objects.get_for_instance_or_none(page)
         return reverse("wagtail_localize:update_translations", args=[source.id])
 
-    def is_shown(self, request, context):
+    def is_shown(self, context):
         view = context["view"]
 
         if view == "edit":
             page = context["page"]
 
             if (
-                request.user.has_perm("wagtail_localize.submit_translation")
+                context["request"].user.has_perm("wagtail_localize.submit_translation")
                 and not page.is_root()
             ):
                 # If the page is the source for translations, show "Sync translated pages" button
@@ -138,7 +138,7 @@ class TranslateSnippetMenuItem(ActionMenuItem):
     name = "action-translate"
     icon_name = "site"
 
-    def get_url(self, request, context):
+    def get_url(self, context):
         model = context["model"]
         snippet = context["instance"]
         return reverse(
@@ -146,14 +146,14 @@ class TranslateSnippetMenuItem(ActionMenuItem):
             args=[model._meta.app_label, model._meta.model_name, snippet.pk],
         )
 
-    def is_shown(self, request, context):
+    def is_shown(self, context):
         model = context["model"]
         view = context["view"]
 
         if view == "edit":
-            if issubclass(model, TranslatableMixin) and request.user.has_perm(
-                "wagtail_localize.submit_translation"
-            ):
+            if issubclass(model, TranslatableMixin) and context[
+                "request"
+            ].user.has_perm("wagtail_localize.submit_translation"):
                 snippet = context["instance"]
 
                 # If there's at least one locale that we haven't translated into yet, show "Translate" button
@@ -178,19 +178,19 @@ class SyncSnippetTranslationsMenuItem(ActionMenuItem):
     name = "action-sync-translations"
     icon_name = "repeat"
 
-    def get_url(self, request, context):
+    def get_url(self, context):
         instance = context["instance"]
         source = TranslationSource.objects.get_for_instance_or_none(instance)
         return reverse("wagtail_localize:update_translations", args=[source.id])
 
-    def is_shown(self, request, context):
+    def is_shown(self, context):
         model = context["model"]
         view = context["view"]
 
         if view == "edit":
-            if issubclass(model, TranslatableMixin) and request.user.has_perm(
-                "wagtail_localize.submit_translation"
-            ):
+            if issubclass(model, TranslatableMixin) and context[
+                "request"
+            ].user.has_perm("wagtail_localize.submit_translation"):
                 snippet = context["instance"]
 
                 # If the snippet is the source for translations, show "Sync

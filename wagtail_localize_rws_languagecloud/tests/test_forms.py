@@ -36,6 +36,7 @@ class TestProjectSettingsForm(TestCase, WagtailTestUtils):
         self.form_class = get_form_for_model(
             LanguageCloudProjectSettings,
             LanguageCloudProjectSettingsForm,
+            fields=("user", "name", "description", "due_date", "template_id"),
         )
         self.form = self._get_form(source_object_instance=self.test_page)
 

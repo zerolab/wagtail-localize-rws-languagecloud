@@ -2,7 +2,15 @@ from django.conf import settings
 from django.db import models
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy
-from wagtail.core.models import Page, PageRevision
+
+
+try:
+    from wagtail.core.models import (  # remove once we drop support for Wagtail < 4.1
+        Page,
+        PageRevision,
+    )
+except ImportError:
+    from wagtail.models import Page, PageRevision
 
 from wagtail_localize.components import register_translation_component
 from wagtail_localize.models import Translation, TranslationSource

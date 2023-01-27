@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "wagtail_localize_rws_languagecloud",
     "wagtail_localize_rws_languagecloud.test",
     "wagtail_localize",
+    "wagtail_localize.locales",
     "wagtail.contrib.search_promotions",
     "wagtail.contrib.forms",
     "wagtail.contrib.redirects",
@@ -177,6 +178,8 @@ LANGUAGES = WAGTAIL_CONTENT_LANGUAGES = [
 ]
 
 WAGTAILLOCALIZE_RWS_LANGUAGECLOUD = {}
+
+WAGTAILADMIN_BASE_URL = "http://testserver"
 
 # Skip the checks for missing individual LanguageCloud settings under test
 # we will set up the settings we need for each test case

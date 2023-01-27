@@ -29,8 +29,9 @@ class TestPageEditTranslateButton(TestCase, WagtailTestUtils):
 
         self.assertContains(
             resp,
-            f'<a class="button" href="/admin/localize/submit/page/{self.test_page.pk}/"><svg class="icon icon-site icon" aria-hidden="true" focusable="false"><use href="#icon-site"></use></svg>Translate this page</a>',
+            f'href="/admin/localize/submit/page/{self.test_page.pk}/"',
         )
+        self.assertContains(resp, "Translate this page")
 
     def test_translate_button_no_permission(self):
         group = Group.objects.get(name="Editors")
@@ -41,9 +42,9 @@ class TestPageEditTranslateButton(TestCase, WagtailTestUtils):
         )
 
         self.assertNotContains(
-            resp,
-            f'<a class="button" href="/admin/localize/submit/page/{self.test_page.pk}/"><svg class="icon icon-site icon" aria-hidden="true" focusable="false"><use href="#icon-site"></use></svg>Translate this page</a>',
+            resp, f'href="/admin/localize/submit/page/{self.test_page.pk}/"'
         )
+        self.assertNotContains(resp, "Translate this page")
 
     def test_translate_button_no_available_locales(self):
         self.locale_fr.delete()
@@ -54,9 +55,9 @@ class TestPageEditTranslateButton(TestCase, WagtailTestUtils):
         )
 
         self.assertNotContains(
-            resp,
-            f'<a class="button" href="/admin/localize/submit/page/{self.test_page.pk}/"><svg class="icon icon-site icon" aria-hidden="true" focusable="false"><use href="#icon-site"></use></svg>Translate this page</a>',
+            resp, f'href="/admin/localize/submit/page/{self.test_page.pk}/"'
         )
+        self.assertNotContains(resp, "Translate this page")
 
 
 class TestPageEditSyncTranslationsButton(TestCase, WagtailTestUtils):
@@ -87,8 +88,9 @@ class TestPageEditSyncTranslationsButton(TestCase, WagtailTestUtils):
 
         self.assertContains(
             resp,
-            f'<a class="button" href="/admin/localize/update/{self.test_page_source.pk}/"><svg class="icon icon-repeat icon" aria-hidden="true" focusable="false"><use href="#icon-repeat"></use></svg>Sync translated pages</a>',
+            f'href="/admin/localize/update/{self.test_page_source.pk}/"',
         )
+        self.assertContains(resp, "Sync translated pages")
 
     def test_sync_button_no_permission(self):
         group = Group.objects.get(name="Editors")
@@ -100,8 +102,9 @@ class TestPageEditSyncTranslationsButton(TestCase, WagtailTestUtils):
 
         self.assertNotContains(
             resp,
-            f'<a class="button" href="/admin/localize/update/{self.test_page_source.pk}/"><svg class="icon icon-repeat icon" aria-hidden="true" focusable="false"><use href="#icon-repeat"></use></svg>Sync translated pages</a>',
+            f'href="/admin/localize/update/{self.test_page_source.pk}/"',
         )
+        self.assertNotContains(resp, "Sync translated pages")
 
     def test_sync_button_no_translations(self):
         self.locale_fr.delete()
@@ -113,8 +116,9 @@ class TestPageEditSyncTranslationsButton(TestCase, WagtailTestUtils):
 
         self.assertNotContains(
             resp,
-            f'<a class="button" href="/admin/localize/update/{self.test_page_source.pk}/"><svg class="icon icon-repeat icon" aria-hidden="true" focusable="false"><use href="#icon-repeat"></use></svg>Sync translated pages</a>',
+            f'href="/admin/localize/update/{self.test_page_source.pk}/"',
         )
+        self.assertNotContains(resp, "Sync translated pages")
 
 
 class TestSnippetEditTranslateButton(TestCase, WagtailTestUtils):
@@ -153,8 +157,9 @@ class TestSnippetEditTranslateButton(TestCase, WagtailTestUtils):
 
         self.assertContains(
             resp,
-            f'<a class="button" href="/admin/localize/submit/snippet/wagtail_localize_rws_languagecloud_test/examplesnippet/{self.test_snippet.pk}/"><svg class="icon icon-site icon" aria-hidden="true" focusable="false"><use href="#icon-site"></use></svg>Translate this snippet</a>',
+            f'href="/admin/localize/submit/snippet/wagtail_localize_rws_languagecloud_test/examplesnippet/{self.test_snippet.pk}/"',
         )
+        self.assertContains(resp, "Translate this snippet")
 
     def test_translate_button_no_permission(self):
         group = Group.objects.get(name="Editors")
@@ -173,8 +178,9 @@ class TestSnippetEditTranslateButton(TestCase, WagtailTestUtils):
 
         self.assertNotContains(
             resp,
-            f'<a class="button" href="/admin/localize/submit/snippet/wagtail_localize_rws_languagecloud_test/examplesnippet/{self.test_snippet.pk}/"><svg class="icon icon-site icon" aria-hidden="true" focusable="false"><use href="#icon-site"></use></svg>Translate this snippet</a>',
+            f'href="/admin/localize/submit/snippet/wagtail_localize_rws_languagecloud_test/examplesnippet/{self.test_snippet.pk}/"',
         )
+        self.assertNotContains(resp, "Translate this snippet")
 
     def test_translate_button_no_available_locales(self):
         self.locale_fr.delete()
@@ -193,8 +199,9 @@ class TestSnippetEditTranslateButton(TestCase, WagtailTestUtils):
 
         self.assertNotContains(
             resp,
-            f'<a class="button" href="/admin/localize/submit/snippet/wagtail_localize_rws_languagecloud_test/examplesnippet/{self.test_snippet.pk}/"><svg class="icon icon-site icon" aria-hidden="true" focusable="false"><use href="#icon-site"></use></svg>Translate this snippet</a>',
+            f'href="/admin/localize/submit/snippet/wagtail_localize_rws_languagecloud_test/examplesnippet/{self.test_snippet.pk}/"',
         )
+        self.assertNotContains(resp, "Translate this snippet")
 
 
 class TestSnippetEditSyncTranslationsButton(TestCase, WagtailTestUtils):
@@ -241,8 +248,9 @@ class TestSnippetEditSyncTranslationsButton(TestCase, WagtailTestUtils):
 
         self.assertContains(
             resp,
-            f'<a class="button" href="/admin/localize/update/{self.test_snippet_source.pk}/"><svg class="icon icon-repeat icon" aria-hidden="true" focusable="false"><use href="#icon-repeat"></use></svg>Sync translated snippets</a>',
+            f'href="/admin/localize/update/{self.test_snippet_source.pk}/"',
         )
+        self.assertContains(resp, "Sync translated snippets")
 
     def test_sync_button_no_permission(self):
         group = Group.objects.get(name="Editors")
@@ -261,8 +269,9 @@ class TestSnippetEditSyncTranslationsButton(TestCase, WagtailTestUtils):
 
         self.assertNotContains(
             resp,
-            f'<a class="button" href="/admin/localize/update/{self.test_snippet_source.pk}/"><svg class="icon icon-repeat icon" aria-hidden="true" focusable="false"><use href="#icon-repeat"></use></svg>Sync translated snippets</a>',
+            f'href="/admin/localize/update/{self.test_snippet_source.pk}/"',
         )
+        self.assertNotContains(resp, "Sync translated snippets")
 
     def test_sync_button_no_translations(self):
         self.locale_fr.delete()
@@ -281,5 +290,6 @@ class TestSnippetEditSyncTranslationsButton(TestCase, WagtailTestUtils):
 
         self.assertNotContains(
             resp,
-            f'<a class="button" href="/admin/localize/update/{self.test_snippet_source.pk}/"><svg class="icon icon-repeat icon" aria-hidden="true" focusable="false"><use href="#icon-repeat"></use></svg>Sync translated snippets</a>',
+            f'href="/admin/localize/update/{self.test_snippet_source.pk}/"',
         )
+        self.assertNotContains(resp, "Sync translated snippets")
