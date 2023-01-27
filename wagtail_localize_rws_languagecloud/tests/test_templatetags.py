@@ -8,7 +8,12 @@ from wagtail_localize.models import Translation
 
 from ..models import LanguageCloudFile, LanguageCloudProject
 from ..templatetags.wagtaillocalizerwslanguagecloud_tags import translation_statuses
-from .helpers import create_editor_user, create_snippet, create_test_page
+from .helpers import (
+    create_editor_user,
+    create_snippet,
+    create_test_page,
+    get_snippet_edit_url,
+)
 
 
 class TestTranslationStatusesTags(TestCase):
@@ -165,11 +170,6 @@ class TestTranslationStatusesTags(TestCase):
         expected_text_fr = "French (Translations happening in LanguageCloud)"
         expected_text_es = "Spanish (Error importing PO file)"
 
-        url = reverse(
-            "wagtailsnippets:edit",
-            args=[snippet._meta.app_label, snippet._meta.model_name, snippet.id],
-        )
-
-        response = self.client.get(url)
+        response = self.client.get(get_snippet_edit_url(snippet))
         self.assertContains(response, expected_text_fr, html=True)
         self.assertContains(response, expected_text_es, html=True)

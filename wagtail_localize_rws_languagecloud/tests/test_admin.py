@@ -6,7 +6,12 @@ from wagtail.tests.utils import WagtailTestUtils
 
 from wagtail_localize.models import Translation
 
-from .helpers import create_editor_user, create_snippet, create_test_page
+from .helpers import (
+    create_editor_user,
+    create_snippet,
+    create_test_page,
+    get_snippet_edit_url,
+)
 
 
 class TestPageEditTranslateButton(TestCase, WagtailTestUtils):
@@ -144,16 +149,7 @@ class TestSnippetEditTranslateButton(TestCase, WagtailTestUtils):
         self.test_snippet, source = create_snippet()
 
     def test_translate_button_in_action_menu(self):
-        resp = self.client.get(
-            reverse(
-                "wagtailsnippets:edit",
-                args=[
-                    "wagtail_localize_rws_languagecloud_test",
-                    "examplesnippet",
-                    self.test_snippet.pk,
-                ],
-            )
-        )
+        resp = self.client.get(get_snippet_edit_url(self.test_snippet))
 
         self.assertContains(
             resp,
@@ -165,16 +161,7 @@ class TestSnippetEditTranslateButton(TestCase, WagtailTestUtils):
         group = Group.objects.get(name="Editors")
         group.permissions.remove(Permission.objects.get(codename="submit_translation"))
 
-        resp = self.client.get(
-            reverse(
-                "wagtailsnippets:edit",
-                args=[
-                    "wagtail_localize_rws_languagecloud_test",
-                    "examplesnippet",
-                    self.test_snippet.pk,
-                ],
-            )
-        )
+        resp = self.client.get(get_snippet_edit_url(self.test_snippet))
 
         self.assertNotContains(
             resp,
@@ -186,16 +173,7 @@ class TestSnippetEditTranslateButton(TestCase, WagtailTestUtils):
         self.locale_fr.delete()
         self.locale_de.delete()
 
-        resp = self.client.get(
-            reverse(
-                "wagtailsnippets:edit",
-                args=[
-                    "wagtail_localize_rws_languagecloud_test",
-                    "examplesnippet",
-                    self.test_snippet.pk,
-                ],
-            )
-        )
+        resp = self.client.get(get_snippet_edit_url(self.test_snippet))
 
         self.assertNotContains(
             resp,
@@ -235,16 +213,7 @@ class TestSnippetEditSyncTranslationsButton(TestCase, WagtailTestUtils):
         )
 
     def test_sync_button_in_action_menu(self):
-        resp = self.client.get(
-            reverse(
-                "wagtailsnippets:edit",
-                args=[
-                    "wagtail_localize_rws_languagecloud_test",
-                    "examplesnippet",
-                    self.test_snippet.pk,
-                ],
-            )
-        )
+        resp = self.client.get(get_snippet_edit_url(self.test_snippet))
 
         self.assertContains(
             resp,
@@ -256,16 +225,7 @@ class TestSnippetEditSyncTranslationsButton(TestCase, WagtailTestUtils):
         group = Group.objects.get(name="Editors")
         group.permissions.remove(Permission.objects.get(codename="submit_translation"))
 
-        resp = self.client.get(
-            reverse(
-                "wagtailsnippets:edit",
-                args=[
-                    "wagtail_localize_rws_languagecloud_test",
-                    "examplesnippet",
-                    self.test_snippet.pk,
-                ],
-            )
-        )
+        resp = self.client.get(get_snippet_edit_url(self.test_snippet))
 
         self.assertNotContains(
             resp,
@@ -277,16 +237,7 @@ class TestSnippetEditSyncTranslationsButton(TestCase, WagtailTestUtils):
         self.locale_fr.delete()
         self.locale_de.delete()
 
-        resp = self.client.get(
-            reverse(
-                "wagtailsnippets:edit",
-                args=[
-                    "wagtail_localize_rws_languagecloud_test",
-                    "examplesnippet",
-                    self.test_snippet.pk,
-                ],
-            )
-        )
+        resp = self.client.get(get_snippet_edit_url(self.test_snippet))
 
         self.assertNotContains(
             resp,
