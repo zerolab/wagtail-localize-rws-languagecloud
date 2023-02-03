@@ -3,7 +3,7 @@
 
 <link rel="stylesheet" href="{% versioned_static 'wagtail_localize_rws_languagecloud/css/wagtail-localize-overrides.css' %}" type="text/css">
 
-{% block action %}{# Wagtail 4+ #}
+{% block action %}{# this template is used in Wagtail 4+ #}
     {% if translations %}
         {% translation_statuses as translation_status_map %}
         {{ translation_status_map }}

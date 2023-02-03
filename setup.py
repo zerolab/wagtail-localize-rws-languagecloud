@@ -56,7 +56,7 @@ setup(
             "responses==0.22.0",
             "flake8==5.0.4",
             "black==22.12.0",
-            "isort==5.11.4",
+            "isort==5.12.0",
         ],
     },
     zip_safe=False,
