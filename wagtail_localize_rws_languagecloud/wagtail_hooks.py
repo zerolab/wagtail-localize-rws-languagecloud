@@ -1,6 +1,5 @@
 from django.urls import include, path, reverse
 from django.utils.translation import gettext as _
-from django.views.i18n import JavaScriptCatalog
 from wagtail.admin.action_menu import ActionMenuItem
 from wagtail.admin.menu import MenuItem
 from wagtail.core import hooks
@@ -14,11 +13,6 @@ from . import views
 @hooks.register("register_admin_urls")
 def register_admin_urls():
     urls = [
-        path(
-            "jsi18n/",
-            JavaScriptCatalog.as_view(packages=["wagtail_localize_rws_languagecloud"]),
-            name="javascript_catalog",
-        ),
         path(
             "reports/languagecloud/",
             views.LanguageCloudReportView.as_view(),
