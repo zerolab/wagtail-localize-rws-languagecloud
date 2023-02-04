@@ -53,7 +53,6 @@ def get_run_before_and_revision_model():
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("wagtail_localize_rws_languagecloud", "0005_languagecloudprojectsettings"),
     ]

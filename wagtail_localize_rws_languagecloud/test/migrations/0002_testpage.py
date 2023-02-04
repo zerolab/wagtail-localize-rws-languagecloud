@@ -6,7 +6,6 @@ import wagtail.core.fields
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("wagtailcore", "0066_collection_management_permissions"),
         ("wagtail_localize_rws_languagecloud_test", "0001_initial"),

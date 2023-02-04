@@ -3,7 +3,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("wagtail_localize", "0013_translationsource_schema_version"),
         ("wagtail_localize_rws_languagecloud", "0002_auto_20210914_1406"),

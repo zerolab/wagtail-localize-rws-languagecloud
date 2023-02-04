@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("wagtail_localize_rws_languagecloud", "0003_auto_20211008_1132"),
     ]
