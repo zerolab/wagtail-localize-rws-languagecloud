@@ -63,3 +63,12 @@ exclude = [
     "*.yml",
     "testmanage.py",
 ]
+
+
+[tool.isort]
+profile = "black"
+known_first_party = "wagtail_localize_rws_languagecloud"
+skip = ["migrations", ".git", "__pycache__", "LC_MESSAGES", "locale", "build", "dist", ".github", ".tox", "venv", ".venv", ".coverage"]
+blocked_extensions = ["pyc", "md", "html", "txt", "css", "sh"]
+lines_between_types = 1
+lines_after_imports = 2
