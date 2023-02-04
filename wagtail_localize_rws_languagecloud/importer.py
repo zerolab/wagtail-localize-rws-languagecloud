@@ -7,7 +7,6 @@ from django.core.exceptions import (
 )
 from django.db import transaction
 from wagtail.core.models import Page
-
 from wagtail_localize.models import (
     MissingRelatedObjectError,
     StringNotUsedInContext,

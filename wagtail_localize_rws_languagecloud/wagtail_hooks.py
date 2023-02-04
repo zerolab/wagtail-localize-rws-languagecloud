@@ -4,7 +4,6 @@ from wagtail.admin.action_menu import ActionMenuItem
 from wagtail.admin.menu import MenuItem
 from wagtail.core import hooks
 from wagtail.core.models import Locale, TranslatableMixin
-
 from wagtail_localize.models import TranslationSource
 
 from . import views

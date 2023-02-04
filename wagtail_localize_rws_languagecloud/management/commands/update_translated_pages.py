@@ -5,8 +5,8 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.db.models.expressions import F, OuterRef, Subquery
 from wagtail.core.models import Page
-
 from wagtail_localize.models import TranslationSource
+
 from wagtail_localize_rws_languagecloud.emails import (
     send_update_translated_pages_emails,
 )
