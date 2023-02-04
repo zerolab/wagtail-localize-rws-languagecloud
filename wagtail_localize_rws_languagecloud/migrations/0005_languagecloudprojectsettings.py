@@ -4,7 +4,6 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("wagtail_localize", "0015_translationcontext_field_path"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
