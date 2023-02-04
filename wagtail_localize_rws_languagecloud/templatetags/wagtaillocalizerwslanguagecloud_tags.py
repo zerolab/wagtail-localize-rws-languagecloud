@@ -43,9 +43,13 @@ def translation_statuses(context):
     """
     # `parent_page` appears in index page views
     # `page` appears in edit page views
-    # `instance` appears in edit snippet views
+    # `instance` appears in edit snippet views pre 4.0
+    # `object` appears in edit snippet views post 4.0
     translatable_object = (
-        context.get("parent_page") or context.get("page") or context.get("instance")
+        context.get("parent_page")
+        or context.get("page")
+        or context.get("instance")
+        or context.get("object")
     )
 
     if not translatable_object:

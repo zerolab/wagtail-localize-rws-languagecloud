@@ -2,11 +2,25 @@ from django.conf import settings
 from django.db import models
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy
-from wagtail.core.models import Page, PageRevision
+from wagtail import VERSION as WAGTAIL_VERSION
+
+
+try:
+    from wagtail.core.models import (  # remove once we drop support for Wagtail < 4.1
+        Page,
+    )
+except ImportError:
+    from wagtail.models import Page
 
 from wagtail_localize.components import register_translation_component
 from wagtail_localize.models import Translation, TranslationSource
 from wagtail_localize_rws_languagecloud.forms import LanguageCloudProjectSettingsForm
+
+
+def get_revision_model():
+    if WAGTAIL_VERSION >= (4, 0):
+        return "wagtailcore.Revision"
+    return "wagtailcore.PageRevision"
 
 
 class StatusModel(models.Model):
@@ -96,7 +110,7 @@ class LanguageCloudFile(StatusModel):
     lc_source_file_id = models.CharField(blank=True, max_length=255)
     create_attempts = models.IntegerField(default=0)
     revision = models.ForeignKey(
-        PageRevision,
+        get_revision_model(),
         on_delete=models.CASCADE,
         blank=True,
         null=True,

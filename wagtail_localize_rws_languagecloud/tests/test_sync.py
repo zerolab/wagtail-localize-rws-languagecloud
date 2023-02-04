@@ -4,7 +4,12 @@ from unittest.mock import Mock
 
 from django.test import TestCase, override_settings
 from requests.exceptions import RequestException
-from wagtail.core.models import Locale
+
+
+try:
+    from wagtail.models import Locale
+except ImportError:
+    from wagtail.core.models import Locale
 
 import wagtail_localize_rws_languagecloud.sync as sync
 
@@ -16,13 +21,14 @@ from .helpers import create_test_page, create_test_po, create_test_project_setti
 
 
 class TestImport(TestCase):
-    def setUp(self):
-        self.locale_en = Locale.objects.get(language_code="en")
-        self.locale_fr = Locale.objects.create(language_code="fr")
-        self.translations = []
-        self.po_files = []
-        self.lc_projects = []
-        self.lc_files = []
+    @classmethod
+    def setUpTestData(cls):
+        cls.locale_en = Locale.objects.get(language_code="en")
+        cls.locale_fr = Locale.objects.create(language_code="fr")
+        cls.translations = []
+        cls.po_files = []
+        cls.lc_projects = []
+        cls.lc_files = []
         for i in range(0, 2):
             _, source = create_test_page(
                 title=f"Test page {i}",
@@ -31,10 +37,10 @@ class TestImport(TestCase):
             )
             translation = Translation.objects.create(
                 source=source,
-                target_locale=self.locale_fr,
+                target_locale=cls.locale_fr,
             )
-            self.translations.append(translation)
-            self.po_files.append(
+            cls.translations.append(translation)
+            cls.po_files.append(
                 create_test_po(
                     [
                         (
@@ -51,16 +57,16 @@ class TestImport(TestCase):
                 internal_status=LanguageCloudProject.STATUS_NEW,
                 lc_project_id=f"proj{i}",
             )
-            self.lc_projects.append(project)
+            cls.lc_projects.append(project)
             file_ = LanguageCloudFile.objects.create(
                 translation=translation,
                 project=project,
                 lc_source_file_id=f"file{i}",
                 internal_status=LanguageCloudFile.STATUS_NEW,
             )
-            self.lc_files.append(file_)
+            cls.lc_files.append(file_)
 
-        self.logger = logging.getLogger(__name__)
+        cls.logger = logging.getLogger(__name__)
         logging.disable()  # supress log output under test
 
     def test_import_all_api_calls_succeed(self):
@@ -210,32 +216,33 @@ class TestImport(TestCase):
 
 @override_settings(WAGTAILLOCALIZE_RWS_LANGUAGECLOUD={"LOCATION_ID": 123})
 class TestExport(TestCase):
-    def setUp(self):
-        self.locale_en = Locale.objects.get(language_code="en")
-        self.locale_fr = Locale.objects.create(language_code="fr")
-        self.locale_de = Locale.objects.create(language_code="de")
-        self.translations = []
-        self.sources = []
+    @classmethod
+    def setUpTestData(cls):
+        cls.locale_en = Locale.objects.get(language_code="en")
+        cls.locale_fr = Locale.objects.create(language_code="fr")
+        cls.locale_de = Locale.objects.create(language_code="de")
+        cls.translations = []
+        cls.sources = []
         for i in range(0, 2):
             _, source = create_test_page(
                 title=f"Test page {i}",
                 slug=f"test-page-{i}",
                 test_charfield=f"Some test translatable content {i}",
             )
-            self.sources.append(source)
+            cls.sources.append(source)
             fr_translation = Translation.objects.create(
                 source=source,
-                target_locale=self.locale_fr,
+                target_locale=cls.locale_fr,
             )
-            self.translations.append(fr_translation)
+            cls.translations.append(fr_translation)
             de_translation = Translation.objects.create(
                 source=source,
-                target_locale=self.locale_de,
+                target_locale=cls.locale_de,
             )
-            self.translations.append(de_translation)
+            cls.translations.append(de_translation)
             create_test_project_settings(source, [fr_translation, de_translation])
 
-        self.get_project_templates_mock = Mock(
+        cls.get_project_templates_mock = Mock(
             side_effect=[
                 {
                     "items": [
@@ -250,7 +257,7 @@ class TestExport(TestCase):
             ],
             spec=True,
         )
-        self.logger = logging.getLogger(__name__)
+        cls.logger = logging.getLogger(__name__)
         logging.disable()  # supress log output under test
 
     def test_export_all_api_calls_succeed(self):
@@ -588,20 +595,21 @@ class TestExport(TestCase):
 
 
 class TestHelpers(TestCase):
-    def setUp(self):
-        self.locale_en = Locale.objects.get(language_code="en")
-        self.locale_fr = Locale.objects.create(language_code="fr")
+    @classmethod
+    def setUpTestData(cls):
+        cls.locale_en = Locale.objects.get(language_code="en")
+        cls.locale_fr = Locale.objects.create(language_code="fr")
         _, source = create_test_page(
             title="Test page",
             slug="test-page",
             test_charfield="Some test translatable content",
         )
-        self.translation = Translation.objects.create(
+        cls.translation = Translation.objects.create(
             source=source,
-            target_locale=self.locale_fr,
+            target_locale=cls.locale_fr,
         )
 
-        self.logger = logging.getLogger(__name__)
+        cls.logger = logging.getLogger(__name__)
         logging.disable()  # supress log output under test
 
     def _create_project_settings(self, lc_project):
@@ -708,27 +716,28 @@ class TestHelpers(TestCase):
 
 
 class TestProjectsToExportLogic(TestCase):
-    def setUp(self):
-        self.locale_en = Locale.objects.get(language_code="en")
-        self.locale_fr = Locale.objects.create(language_code="fr")
-        self.locale_de = Locale.objects.create(language_code="de")
+    @classmethod
+    def setUpTestData(cls):
+        cls.locale_en = Locale.objects.get(language_code="en")
+        cls.locale_fr = Locale.objects.create(language_code="fr")
+        cls.locale_de = Locale.objects.create(language_code="de")
 
-        _, self.source = create_test_page(
+        _, cls.source = create_test_page(
             title="Test page",
             slug="test-page",
             test_charfield="Some test translatable content",
         )
-        self.translation_fr = Translation.objects.create(
-            source=self.source,
-            target_locale=self.locale_fr,
+        cls.translation_fr = Translation.objects.create(
+            source=cls.source,
+            target_locale=cls.locale_fr,
         )
 
-        self.translation_de = Translation.objects.create(
-            source=self.source,
-            target_locale=self.locale_de,
+        cls.translation_de = Translation.objects.create(
+            source=cls.source,
+            target_locale=cls.locale_de,
         )
 
-        self.logger = logging.getLogger(__name__)
+        cls.logger = logging.getLogger(__name__)
         logging.disable()  # supress log output under test
 
     def _add_settings(self):
@@ -839,27 +848,28 @@ class TestProjectsToExportLogic(TestCase):
 
 
 class TestProjectsToStartLogic(TestCase):
-    def setUp(self):
-        self.locale_en = Locale.objects.get(language_code="en")
-        self.locale_fr = Locale.objects.create(language_code="fr")
-        self.locale_de = Locale.objects.create(language_code="de")
+    @classmethod
+    def setUpTestData(cls):
+        cls.locale_en = Locale.objects.get(language_code="en")
+        cls.locale_fr = Locale.objects.create(language_code="fr")
+        cls.locale_de = Locale.objects.create(language_code="de")
 
-        _, self.source = create_test_page(
+        _, cls.source = create_test_page(
             title="Test page",
             slug="test-page",
             test_charfield="Some test translatable content",
         )
-        self.translation_fr = Translation.objects.create(
-            source=self.source,
-            target_locale=self.locale_fr,
+        cls.translation_fr = Translation.objects.create(
+            source=cls.source,
+            target_locale=cls.locale_fr,
         )
 
-        self.translation_de = Translation.objects.create(
-            source=self.source,
-            target_locale=self.locale_de,
+        cls.translation_de = Translation.objects.create(
+            source=cls.source,
+            target_locale=cls.locale_de,
         )
 
-        self.logger = logging.getLogger(__name__)
+        cls.logger = logging.getLogger(__name__)
         logging.disable()  # supress log output under test
 
     def _add_settings(self):

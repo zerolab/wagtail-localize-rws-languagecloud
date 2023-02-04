@@ -3,7 +3,12 @@ from unittest import mock
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.test import TestCase, override_settings
-from wagtail.core.models import Locale
+
+
+try:
+    from wagtail.models import Locale
+except ImportError:
+    from wagtail.core.models import Locale
 
 from wagtail_localize.models import Translation
 from wagtail_localize_rws_languagecloud import emails
@@ -21,7 +26,8 @@ def _create_user(username, email):
 
 
 class TestEmails(TestCase):
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         submit_translation_group = Group.objects.create(name="submit_translation_group")
         submit_translation_group.permissions.add(
             Permission.objects.get(
@@ -65,7 +71,7 @@ class TestEmails(TestCase):
             slug="test-page",
             test_charfield="Some test translatable content",
         )
-        self.translation = Translation.objects.create(
+        cls.translation = Translation.objects.create(
             source=source,
             target_locale=locale_fr,
         )
@@ -79,8 +85,8 @@ class TestEmails(TestCase):
                 )
             ]
         )
-        self.translation.import_po(po_file)
-        self.translation.save_target(publish=False)
+        cls.translation.import_po(po_file)
+        cls.translation.save_target(publish=False)
 
     def test_get_recipients(self):
         recipients = emails.get_recipients()

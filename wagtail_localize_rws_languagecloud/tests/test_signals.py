@@ -16,8 +16,9 @@ from .helpers import create_test_page, create_test_po
 
 
 class TestSignals(TestCase):
-    def setUp(self):
-        self.po_file = create_test_po(
+    @classmethod
+    def setUpTestData(cls):
+        cls.po_file = create_test_po(
             [
                 (
                     "test_charfield",
@@ -26,17 +27,17 @@ class TestSignals(TestCase):
                 )
             ]
         )
-        self.locale_fr = Locale.objects.create(language_code="fr")
-        self.page, source = create_test_page(
+        cls.locale_fr = Locale.objects.create(language_code="fr")
+        cls.page, source = create_test_page(
             title="Test page",
             slug="test-page",
             test_charfield="Some test translatable content",
         )
         translation = Translation.objects.create(
             source=source,
-            target_locale=self.locale_fr,
+            target_locale=cls.locale_fr,
         )
-        self.project = LanguageCloudProject.objects.create(
+        cls.project = LanguageCloudProject.objects.create(
             translation_source=source,
             source_last_updated_at=source.last_updated_at,
             internal_status=LanguageCloudProject.STATUS_NEW,
@@ -44,12 +45,12 @@ class TestSignals(TestCase):
         )
         LanguageCloudFile.objects.create(
             translation=translation,
-            project=self.project,
+            project=cls.project,
             lc_source_file_id="file",
             internal_status=LanguageCloudFile.STATUS_NEW,
         )
 
-        self.logger = logging.getLogger(__name__)
+        cls.logger = logging.getLogger(__name__)
         logging.disable()  # supress log output under test
 
     def test_translation_imported_signal(self):

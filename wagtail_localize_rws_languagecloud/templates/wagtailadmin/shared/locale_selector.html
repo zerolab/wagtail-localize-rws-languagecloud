@@ -3,7 +3,7 @@
 
 <link rel="stylesheet" href="{% versioned_static 'wagtail_localize_rws_languagecloud/css/wagtail-localize-overrides.css' %}" type="text/css">
 
-{% if translations %}
+{% if translations %}{# This template is used in Wagtail < 3.0 #}
     {% translation_statuses as translation_status_map %}
     <div class="c-dropdown t-inverted {{ class }}" style="display: inline-block;" data-dropdown>
         <a href="javascript:void(0)" aria-label="{{ locale.get_display_name }}" class="c-dropdown__button  u-btn-current">

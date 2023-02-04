@@ -8,8 +8,13 @@ import pytz
 from django import forms
 from django.test import TestCase, override_settings
 from freezegun import freeze_time
-from wagtail.admin.edit_handlers import get_form_for_model
 from wagtail.tests.utils import WagtailTestUtils
+
+
+try:
+    from wagtail.admin.panels import get_form_for_model
+except ImportError:
+    from wagtail.admin.edit_handlers import get_form_for_model
 
 from wagtail_localize_rws_languagecloud.forms import (
     LanguageCloudProjectSettingsForm,
@@ -25,22 +30,26 @@ from .helpers import create_test_page
 
 @override_settings(WAGTAILLOCALIZE_RWS_LANGUAGECLOUD={"TEMPLATE_ID": "c0ffee"})
 @freeze_time("2018-02-02 12:00:01")
-class TestProjectSettingsForm(TestCase, WagtailTestUtils):
-    def setUp(self):
-        self.test_page, source = create_test_page(
+class TestProjectSettingsForm(WagtailTestUtils, TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.test_page, source = create_test_page(
             title="Test page",
             slug="test-page",
             test_charfield="Some test translatable content",
         )
 
-        self.form_class = get_form_for_model(
+        cls.form_class = get_form_for_model(
             LanguageCloudProjectSettings,
             LanguageCloudProjectSettingsForm,
+            fields=("user", "name", "description", "due_date", "template_id"),
         )
-        self.form = self._get_form(source_object_instance=self.test_page)
 
-        self.logger = logging.getLogger(__name__)
+        cls.logger = logging.getLogger(__name__)
         logging.disable()  # supress log output under test
+
+    def setUp(self):
+        self.form = self._get_form(source_object_instance=self.test_page)
 
     @mock.patch(
         "wagtail_localize_rws_languagecloud.forms.LanguageCloudProjectSettingsForm._get_project_templates",

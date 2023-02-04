@@ -2,15 +2,17 @@ import datetime
 
 import polib
 
+from django.contrib.admin.utils import quote
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
+from django.urls import reverse
 from django.utils import timezone
+from wagtail import VERSION as WAGTAIL_VERSION
 from wagtail.core.models import Page
 
 from wagtail_localize.models import TranslationSource
-from wagtail_localize.test.models import TestPage
 from wagtail_localize_rws_languagecloud.models import LanguageCloudProjectSettings
-from wagtail_localize_rws_languagecloud.test.models import ExampleSnippet
+from wagtail_localize_rws_languagecloud.test.models import ExampleSnippet, TestPage
 
 
 User = get_user_model()
@@ -79,3 +81,16 @@ def create_snippet(name="test snippet"):
     snippet = ExampleSnippet.objects.create(name=name)
     source, created = TranslationSource.get_or_create_from_instance(snippet)
     return snippet, source
+
+
+def get_snippet_edit_url(snippet):
+    if WAGTAIL_VERSION >= (4, 0):
+        return reverse(
+            f"wagtailsnippets_{snippet._meta.app_label}_{snippet._meta.model_name}:edit",
+            args=[quote(snippet.pk)],
+        )
+
+    return reverse(
+        "wagtailsnippets:edit",
+        args=[snippet._meta.app_label, snippet._meta.model_name, quote(snippet.pk)],
+    )

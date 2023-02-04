@@ -37,32 +37,21 @@ INSTALLED_APPS = [
     "wagtail_localize_rws_languagecloud",
     "wagtail_localize_rws_languagecloud.test",
     "wagtail_localize",
-    "wagtail_localize.test",
-    "wagtail.contrib.search_promotions",
-    "wagtail.contrib.forms",
-    "wagtail.contrib.redirects",
-    "wagtail.embeds",
+    "wagtail_localize.locales",
     "wagtail.users",
     "wagtail.snippets",
     "wagtail.documents",
     "wagtail.images",
-    "wagtail.search",
     "wagtail.admin",
-    "wagtail.api.v2",
-    "wagtail.contrib.modeladmin",
-    "wagtail.contrib.routable_page",
-    "wagtail.contrib.styleguide",
     "wagtail.sites",
     "wagtail.core",
     "taggit",
-    "rest_framework",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "django.contrib.sitemaps",
 ]
 
 MIDDLEWARE = [
@@ -73,7 +62,6 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "wagtail.contrib.redirects.middleware.RedirectMiddleware",
 ]
 
 ROOT_URLCONF = "wagtail_localize_rws_languagecloud.test.urls"
@@ -178,6 +166,8 @@ LANGUAGES = WAGTAIL_CONTENT_LANGUAGES = [
 ]
 
 WAGTAILLOCALIZE_RWS_LANGUAGECLOUD = {}
+
+WAGTAILADMIN_BASE_URL = "http://testserver"
 
 # Skip the checks for missing individual LanguageCloud settings under test
 # we will set up the settings we need for each test case

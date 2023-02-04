@@ -6,35 +6,40 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python 3.7
-        uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
         with:
-          python-version: 3.7
-      - name: Install Tox
-        run: |
-          python -m pip install tox
-      - name: Lint
-        run: tox
-        env:
-          TOXENV: lint
+          fetch-depth: 0
+      - uses: actions/setup-python@v3
+        with:
+          python-version: '3.8'
+      - uses: pre-commit/action@v3.0.0
 
   test-sqlite:
     needs: lint
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        'python': ['3.7', '3.8', '3.9']
-        'django-wagtail':
-          - 'django3.1-wagtail2.12'
-          - 'django3.1-wagtail2.13'
-          - 'django3.1-wagtail2.14'
-          - 'django3.2-wagtail2.14'
+        python: ['3.8', '3.9', '3.10']
+        django-wagtail:
           - 'django3.2-wagtail2.15'
+          - 'django3.2-wagtail3.0'
+          - 'django3.2-wagtail4.0'
+          - 'django3.2-wagtail4.1'
+          - 'django3.2-wagtail4.2'
+          - 'django4.1-wagtail4.0'
+          - 'django4.1-wagtail4.1'
+          - 'django4.1-wagtail4.2'
+        include:
+          - python: '3.11'
+            django-wagtail: 'django4.1-wagtail4.1'
+          - python: '3.7'
+            django-wagtail: 'django3.2-wagtail4.1'
+          - python: '3.7'
+            django-wagtail: 'django3.2-wagtail4.2'
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
       - name: Install Tox
@@ -51,26 +56,33 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        postgres: ['10.8']
-        'python': ['3.7', '3.8', '3.9']
-        'django-wagtail':
-          - 'django3.1-wagtail2.12'
-          - 'django3.1-wagtail2.13'
-          - 'django3.1-wagtail2.14'
-          - 'django3.2-wagtail2.14'
+        python: ['3.8', '3.9', '3.10']
+        django-wagtail:
           - 'django3.2-wagtail2.15'
+          - 'django3.2-wagtail3.0'
+          - 'django3.2-wagtail4.0'
+          - 'django3.2-wagtail4.1'
+          - 'django3.2-wagtail4.2'
+          - 'django4.1-wagtail4.0'
+          - 'django4.1-wagtail4.1'
+          - 'django4.1-wagtail4.2'
+        include:
+          - python: '3.11'
+            django-wagtail: 'django4.1-wagtail4.1'
 
     services:
       postgres:
-        image: postgres:${{ matrix.postgres }}
+        image: postgres:12.7
+        env:
+          POSTGRES_PASSWORD: postgres
         ports:
           - 5432:5432
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
       - name: Install Tox
