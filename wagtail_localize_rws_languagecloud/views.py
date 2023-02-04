@@ -9,7 +9,6 @@ from wagtail.admin.filters import WagtailFilterSet
 from wagtail.admin.views.pages.utils import get_valid_next_url_from_request
 from wagtail.admin.views.reports import ReportView
 from wagtail.core.models import Locale
-
 from wagtail_localize.models import TranslationSource
 from wagtail_localize.views.update_translations import UpdateTranslationsView
 

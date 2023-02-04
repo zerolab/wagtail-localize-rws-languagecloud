@@ -11,9 +11,9 @@ try:
 except ImportError:
     from wagtail.core.models import Locale
 
-import wagtail_localize_rws_languagecloud.sync as sync
-
 from wagtail_localize.models import Translation
+
+import wagtail_localize_rws_languagecloud.sync as sync
 
 from ..models import LanguageCloudFile, LanguageCloudProject, LanguageCloudStatus
 from ..rws_client import ApiClient

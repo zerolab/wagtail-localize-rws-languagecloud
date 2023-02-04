@@ -11,6 +11,7 @@ except ImportError:
     from wagtail.core.models import Locale
 
 from wagtail_localize.models import Translation
+
 from wagtail_localize_rws_languagecloud import emails
 
 from .helpers import create_test_page, create_test_po

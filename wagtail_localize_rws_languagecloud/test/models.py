@@ -2,7 +2,6 @@ from django.db import models
 from django.utils.translation import gettext_lazy
 from wagtail.core.models import TranslatableMixin
 from wagtail.snippets.models import register_snippet
-
 from wagtail_localize.fields import SynchronizedField, TranslatableField
 
 

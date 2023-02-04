@@ -1,0 +1,74 @@
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "wagtail-localize-rws-languagecloud"
+authors = [{name = "Chris Shaw", email = "chris.shaw@torchbox.com"}]
+description = "Translate and localize Wagtail CMS content with RWS LanguageCloud"
+readme = "README.md"
+license = {file = "LICENSE"}
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Framework :: Django",
+    "Framework :: Django :: 3.2",
+    "Framework :: Django :: 4.0",
+    "Framework :: Django :: 4.1",
+    "Framework :: Wagtail",
+    "Framework :: Wagtail :: 2",
+    "Framework :: Wagtail :: 3",
+    "Framework :: Wagtail :: 4",
+]
+dynamic = ["version"]
+requires-python = ">=3.7"
+dependencies = [
+    "Django>=3.2,<4.2",
+    "Wagtail>=2.15",
+    "wagtail-localize>=1.0.1"
+]
+
+[project.optional-dependencies]
+testing = [
+    "dj-database-url==1.2.0",
+    "freezegun==1.2.2",
+    "responses==0.22.0",
+]
+
+[project.urls]
+Source = "https://github.com/zerolab/wagtail-localize-rws-languagecloud"
+Changelog = "https://github.com/zerolab/wagtail-localize-rws-languagecloud/blob/main/CHANGELOG.md"
+
+[tool.flit.module]
+name = "wagtail_localize_rws_languagecloud"
+
+[tool.flit.sdist]
+exclude = [
+    "wagtail_localize_rws_languagecloud/test",
+    "wagtail_localize_rws_languagecloud/**/tests",
+    "Makefile",
+    "docs",
+    ".*",
+    "*.json",
+    "*.ini",
+    "*.yml",
+    "testmanage.py",
+]
+
+
+[tool.isort]
+profile = "black"
+known_first_party = "wagtail_localize_rws_languagecloud"
+skip = ["migrations", ".git", "__pycache__", "LC_MESSAGES", "locale", "build", "dist", ".github", ".tox", "venv", ".venv", ".coverage"]
+blocked_extensions = ["pyc", "md", "html", "txt", "css", "sh"]
+lines_between_types = 1
+lines_after_imports = 2

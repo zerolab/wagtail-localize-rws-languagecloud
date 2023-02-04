@@ -4,10 +4,9 @@ from unittest.mock import MagicMock, Mock
 
 from django.test import TestCase
 from wagtail.core.models import Locale
+from wagtail_localize.models import Translation
 
 import wagtail_localize_rws_languagecloud.sync as sync
-
-from wagtail_localize.models import Translation
 
 from ..models import LanguageCloudFile, LanguageCloudProject, LanguageCloudStatus
 from ..rws_client import ApiClient

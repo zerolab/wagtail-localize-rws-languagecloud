@@ -158,6 +158,13 @@ then with your preferred virtualenv activated, install testing dependencies:
 make install
 ```
 
+#### Using flit
+
+```shell
+python -m pip install "flit>=3.8.0"
+flit install
+```
+
 ### pre-commit
 
 Note that this project uses [pre-commit](https://github.com/pre-commit/pre-commit). To set up locally:

@@ -9,8 +9,8 @@ from django.urls import reverse
 from django.utils import timezone
 from wagtail import VERSION as WAGTAIL_VERSION
 from wagtail.core.models import Page
-
 from wagtail_localize.models import TranslationSource
+
 from wagtail_localize_rws_languagecloud.models import LanguageCloudProjectSettings
 from wagtail_localize_rws_languagecloud.test.models import ExampleSnippet, TestPage
 

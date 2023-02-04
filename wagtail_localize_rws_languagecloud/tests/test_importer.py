@@ -6,12 +6,12 @@ from unittest import mock
 from django.core.exceptions import SuspiciousOperation, ValidationError
 from django.test import TestCase
 from wagtail.core.models import Locale
-
 from wagtail_localize.models import (
     MissingRelatedObjectError,
     Translation,
     TranslationSource,
 )
+
 from wagtail_localize_rws_languagecloud.test.models import ExampleSnippet, TestPage
 
 from ..importer import Importer

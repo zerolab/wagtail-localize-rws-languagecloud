@@ -10,8 +10,8 @@ from wagtail.admin.forms import WagtailAdminModelForm
 from wagtail.admin.models import get_object_usage
 from wagtail.admin.templatetags.wagtailadmin_tags import user_display_name
 from wagtail.core.models import Page
-
 from wagtail_localize.models import TranslationSource
+
 from wagtail_localize_rws_languagecloud.rws_client import ApiClient, NotAuthenticated
 
 

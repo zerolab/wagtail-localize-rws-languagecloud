@@ -14,6 +14,7 @@ except ImportError:
 
 from wagtail_localize.components import register_translation_component
 from wagtail_localize.models import Translation, TranslationSource
+
 from wagtail_localize_rws_languagecloud.forms import LanguageCloudProjectSettingsForm
 
 
