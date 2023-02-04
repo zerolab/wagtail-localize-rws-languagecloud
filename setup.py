@@ -54,10 +54,7 @@ setup(
             "dj-database-url==1.2.0",
             "freezegun==1.2.2",
             "responses==0.22.0",
-            "flake8==5.0.4",
-            "black==22.12.0",
-            "isort==5.12.0",
-        ],
+        ]
     },
     zip_safe=False,
 )
