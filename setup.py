@@ -46,7 +46,7 @@ setup(
     ],
     install_requires=[
         "Django>=3.2,<4.2",
-        "Wagtail>=2.15,<5.0",
+        "Wagtail>=2.15",
         "wagtail-localize>=1.0.1",
     ],
     extras_require={
