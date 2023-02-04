@@ -3,17 +3,13 @@
 help:
 	@grep '^\.PHONY' Makefile | cut -d' ' -f2- | tr ' ' '\n'
 
-format:
-	isort --profile black .
-	black .
-
 install:
-	pip install -e ".[testing]"
+	python -m pip install -e ".[testing]"
+	python -m pip install -U pre-commit
+	pre-commit install
 
 lint:
-	isort --profile black -c --diff .
-	black --check .
-	flake8 .
+	git ls-files --others --cached --exclude-standard | xargs pre-commit run --files
 
 test:
 	coverage run testmanage.py test --deprecation all
